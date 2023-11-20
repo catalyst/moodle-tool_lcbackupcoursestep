@@ -1,4 +1,5 @@
 # Backup course (Life cycle step)
+Custom course backup step which allows overriding site default settings for backups.
 
 Installation
 ============
