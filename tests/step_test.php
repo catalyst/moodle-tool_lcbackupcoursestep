@@ -93,7 +93,7 @@ class step_test extends \advanced_testcase {
                 "backup_calendarevents" => true,
                 "backup_userscompletion" => true,
                 "backup_logs" => true,
-                "backup_histories" => true,
+                "backup_grade_histories" => true,
                 "backup_questionbank" => true,
                 "backup_groups" => true,
                 "backup_competencies" => true,
