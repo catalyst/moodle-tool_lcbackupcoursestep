@@ -53,23 +53,20 @@ class step extends libbase {
 
         // Settings.
         $backupplan = $bc->get_plan();
-        $backupplan->get_setting('users')->set_value($settings['backup_users']);
-        $backupplan->get_setting('anonymize')->set_value($settings['backup_anonymize']);
-        $backupplan->get_setting('role_assignments')->set_value($settings['backup_role_assignments']);
-        $backupplan->get_setting('activities')->set_value($settings['backup_activities']);
-        $backupplan->get_setting('blocks')->set_value($settings['backup_blocks']);
-        $backupplan->get_setting('files')->set_value($settings['backup_files']);
-        $backupplan->get_setting('filters')->set_value($settings['backup_filters']);
-        $backupplan->get_setting('comments')->set_value($settings['backup_comments']);
-        $backupplan->get_setting('badges')->set_value($settings['backup_badges']);
-        $backupplan->get_setting('calendarevents')->set_value($settings['backup_calendarevents']);
-        $backupplan->get_setting('userscompletion')->set_value($settings['backup_userscompletion']);
-        $backupplan->get_setting('logs')->set_value($settings['backup_logs']);
-        $backupplan->get_setting('grade_histories')->set_value($settings['backup_histories']);
-        $backupplan->get_setting('questionbank')->set_value($settings['backup_questionbank']);
-        $backupplan->get_setting('groups')->set_value($settings['backup_groups']);
-        $backupplan->get_setting('competencies')->set_value($settings['backup_competencies']);
-        $backupplan->get_setting('contentbankcontent')->set_value($settings['backup_contentbankcontent']);
+        $keyprefix = "backup_";
+        foreach ($settings as $key => $value) {
+            // The keys are prefixed with backup_, check then remove.
+            if (strpos($key, $keyprefix) !== 0) {
+                continue;
+            }
+
+            $key = substr($key, strlen($keyprefix));
+            $setting = $backupplan->get_setting($key);
+
+            if ($setting->get_status() === \base_setting::NOT_LOCKED) {
+                $setting->set_value($value);
+            }
+        }
 
         // Set the default filename.
         $format = $bc->get_format();
@@ -126,7 +123,7 @@ class step extends libbase {
             new instance_setting('backup_calendarevents', PARAM_BOOL, true),
             new instance_setting('backup_userscompletion', PARAM_BOOL, true),
             new instance_setting('backup_logs', PARAM_BOOL, true),
-            new instance_setting('backup_histories', PARAM_BOOL, true),
+            new instance_setting('backup_grade_histories', PARAM_BOOL, true),
             new instance_setting('backup_questionbank', PARAM_BOOL, true),
             new instance_setting('backup_groups', PARAM_BOOL, true),
             new instance_setting('backup_competencies', PARAM_BOOL, true),
@@ -199,9 +196,9 @@ class step extends libbase {
         $mform->setDefault('backup_logs', true);
 
         // Grade histories.
-        $mform->addElement('advcheckbox', 'backup_histories', get_string('generalhistories', 'backup'));
-        $mform->setType('backup_histories', PARAM_BOOL);
-        $mform->setDefault('backup_histories', true);
+        $mform->addElement('advcheckbox', 'backup_grade_histories', get_string('generalhistories', 'backup'));
+        $mform->setType('backup_grade_histories', PARAM_BOOL);
+        $mform->setDefault('backup_grade_histories', true);
 
         // Question bank.
         $mform->addElement('advcheckbox', 'backup_questionbank', get_string('generalquestionbank', 'backup'));
