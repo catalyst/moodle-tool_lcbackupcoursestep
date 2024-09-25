@@ -41,7 +41,8 @@ class course_table extends \table_sql
 
         // Action buttons string
         $this->strings = [
-            'download' => get_string('download')
+            'download' => get_string('download'),
+            'restore' => get_string('restore'),
         ];
 
         // Build the SQL.
@@ -119,6 +120,13 @@ class course_table extends \table_sql
                 new \moodle_url('', ['action' => 'download', 'id' => $row->id, 'sesskey' => sesskey()]),
                 new \pix_icon('t/download', $this->strings['download']),
                 $this->strings['download']
+            )
+        );
+        $actionmenu->add_primary_action(
+            new \action_menu_link_primary(
+                new \moodle_url('', ['action' => 'restore', 'id' => $row->id, 'sesskey' => sesskey()]),
+                new \pix_icon('t/restore', $this->strings['restore']),
+                $this->strings['restore']
             )
         );
 

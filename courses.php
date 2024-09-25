@@ -58,11 +58,24 @@ if ($action) {
     }
 
     // Perform the action.
-    if ($action == 'download') {
-        // Download the file.
-        send_stored_file($file, 0, 0, true);
-    } else {
-        throw new coding_exception("action must be 'download'");
+    switch ($action) {
+        case 'download':
+            // Download the file.
+            send_stored_file($file, 0, 0, true);
+            break;
+        case 'restore':
+            $context = \context_system::instance();
+            $restoreurl = new \moodle_url('/backup/restore.php',
+                array(
+                    'contextid' => $context->id,
+                    'pathnamehash' => $file->get_pathnamehash(),
+                    'contenthash' => $file->get_contenthash(),
+                )
+            );
+            redirect($restoreurl);
+        default:
+            throw new coding_exception("action '{$action}' is not supported.");
+            break;
     }
 }
 
