@@ -48,7 +48,7 @@ class course_table extends \table_sql
         // Build the SQL.
         $fields = 'f.id as id,
                    co.id as courseid, co.shortname as courseshortname, co.fullname as coursefullname,
-                   f.filename as filename, f.timecreated as createdat';
+                   f.filename as filename, f.filesize as filesize, f.timecreated as createdat';
         $from = '{files} f
                  JOIN {context} c ON c.id = f.contextid
                  JOIN {course} co ON co.id = c.instanceid';
@@ -84,6 +84,7 @@ class course_table extends \table_sql
             'courseshortname',
             'coursefullname',
             'filename',
+            'filesize',
             'createdat',
             'actions',
         ]);
@@ -93,12 +94,14 @@ class course_table extends \table_sql
             get_string('course_shortname_header', 'tool_lcbackupcoursestep'),
             get_string('course_fullname_header', 'tool_lcbackupcoursestep'),
             get_string('filename_header', 'tool_lcbackupcoursestep'),
+            get_string('filesize_header', 'tool_lcbackupcoursestep'),
             get_string('createdat_header', 'tool_lcbackupcoursestep'),
             get_string('actions_header', 'tool_lcbackupcoursestep'),
         ]);
 
         // Set table attributes.
         $this->sortable(true, 'filename', SORT_DESC);
+        $this->sortable(true, 'filesize', SORT_DESC);
         $this->collapsible(true);
         $this->initialbars(true);
         $this->set_attribute('class', 'admintable generaltable');
@@ -142,5 +145,13 @@ class course_table extends \table_sql
     public function col_createdat($row)
     {
         return userdate($row->createdat);
+    }
+
+    /**
+     * Display size in user friendly format.
+     */
+    public function col_filesize($row)
+    {
+        return display_size($row->filesize);
     }
 }
