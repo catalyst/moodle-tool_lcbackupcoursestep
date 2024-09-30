@@ -21,5 +21,6 @@ $string['course_id_header'] = 'Course ID';
 $string['course_shortname_header'] = 'Course short name';
 $string['course_fullname_header'] = 'Course fullname name';
 $string['filename_header'] = 'File name';
+$string['filesize_header'] = 'File size';
 $string['createdat_header'] = 'Created at';
 $string['actions_header'] = 'Actions';
