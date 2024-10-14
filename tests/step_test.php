@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Trigger test for end date delay trigger.
+ * Test file for backup and restore process.
  *
  * @package    tool_lcbackupcoursestep
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -37,7 +37,7 @@ use tool_lifecycle\settings_type;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Trigger test for start date delay trigger.
+ * Test class for backup and restore process.
  *
  * @package    tool_lcbackupcoursestep
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -105,11 +105,11 @@ class step_test extends \advanced_testcase {
         // Course.
         $this->course = $this->getDataGenerator()->create_course();
 
-        // Create and enrol a student in the course.
+        // Create and enroll a student in the course.
         $this->student = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($this->student->id, $this->course->id);
 
-        // Create an assigment in the course
+        // Create an assignment in the course.
         $this->getDataGenerator()->create_module('assign', [
             'name' => "Test assign",
             'course' => $this->course->id
@@ -120,14 +120,14 @@ class step_test extends \advanced_testcase {
     }
 
     /**
-     * Test course is backed up.
+     * Test that the course is backed up and the metadata is stored.
      */
     public function test_backup_course_step() {
         global $DB, $CFG;
 
         $this->resetAfterTest();
 
-        // Run trigger.
+        // Run the trigger.
         process_manager::manually_trigger_process($this->course->id, $this->trigger->id);
 
         // Run processor.
@@ -170,7 +170,7 @@ class step_test extends \advanced_testcase {
         $path = $CFG->tempdir . DIRECTORY_SEPARATOR . "backup" . DIRECTORY_SEPARATOR . $backupdir;
         $storedfile->extract_to_pathname(get_file_packer('application/vnd.moodle.backup'), $path);
 
-        // Restore course
+        // Restore course.
         list($fullname, $shortname) = restore_dbops::calculate_course_names(0, get_string('restoringcourse', 'backup'),
             get_string('restoringcourseshortname', 'backup'));
 
@@ -198,6 +198,13 @@ class step_test extends \advanced_testcase {
         // There is an assignment in the course.
         $this->assertNotEmpty($DB->get_record('assign', ['course' => $courseid]));
 
+        // Check the metadata table for the file backup entry.
+        $metadata = $DB->get_record('tool_lcbackupcoursestep_metadata', ['fileid' => $file->id]);
+        $this->assertNotEmpty($metadata);
+
+        // Check metadata details.
+        $this->assertEquals($this->course->id, $metadata->oldcourseid);
+        $this->assertEquals($this->course->shortname, $metadata->shortname);
     }
 
 }
