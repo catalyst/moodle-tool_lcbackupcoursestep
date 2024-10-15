@@ -14,7 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Step for backing up a course in the lifecycle process.
+ *
+ * @package    tool_lcbackupcoursestep
+ * @copyright  2024 Catalyst
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_lcbackupcoursestep\lifecycle;
+
+defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
@@ -28,20 +38,39 @@ use tool_lifecycle\settings_type;
 use tool_lifecycle\step\instance_setting;
 use tool_lifecycle\step\libbase;
 
-defined('MOODLE_INTERNAL') || die();
-
 class step extends libbase {
-    public function get_subpluginname()
-    {
+    /**
+     * Get the subplugin name.
+     *
+     * @return string Subplugin name.
+     */
+    public function get_subpluginname() {
         return 'tool_lcbackupcoursestep';
     }
 
+    /**
+     * Get the plugin description.
+     *
+     * @return string Plugin description.
+     */
     public function get_plugin_description() {
         return "Backup course";
     }
 
-    public function process_course($processid, $instanceid, $course)
-    {
+    /**
+     * Process the course for backup.
+     *
+     * @param int $processid The process ID.
+     * @param int $instanceid The instance ID.
+     * @param object $course The course object.
+     * @return step_response Response for the step processing.
+     * @throws \backup_controller_exception
+     * @throws \base_setting_exception
+     * @throws \dml_exception
+     */
+    public function process_course($processid, $instanceid, $course) {
+        global $DB;
+
         $courseid = $course->id;
 
         // Get backup settings.
@@ -86,7 +115,7 @@ class step extends libbase {
         if (!empty($file)) {
             // Prepare file record.
             $filerecord = [
-                'contextid' => \context_course::instance($courseid)->id,
+                'contextid' => \context_system::instance()->id,
                 'component' => 'tool_lcbackupcoursestep',
                 'filearea' => 'course_backup',
                 'itemid' => $instanceid,
@@ -96,7 +125,15 @@ class step extends libbase {
 
             // Save file.
             $fs = get_file_storage();
-            $fs->create_file_from_storedfile($filerecord, $file);
+            $newfile = $fs->create_file_from_storedfile($filerecord, $file);
+
+            $DB->insert_record('tool_lcbackupcoursestep_metadata', [
+                'shortname' => $course->shortname,
+                'fullname' => $course->fullname,
+                'oldcourseid' => $course->id,
+                'fileid' => $newfile->get_id(),
+                'timecreated' => time()
+            ]);
 
             // Delete file.
             $file->delete();
@@ -109,6 +146,11 @@ class step extends libbase {
         return step_response::proceed();
     }
 
+    /**
+     * Define instance settings for the plugin.
+     *
+     * @return instance_setting[] List of instance settings.
+     */
     public function instance_settings() {
         return [
             new instance_setting('backup_users', PARAM_BOOL, true),
@@ -132,6 +174,11 @@ class step extends libbase {
         ];
     }
 
+    /**
+     * Extend the form definition for adding an instance.
+     *
+     * @param \MoodleQuickForm $mform The form to extend.
+     */
     public function extend_add_instance_form_definition($mform) {
         // Backup settings.
 
@@ -227,15 +274,15 @@ class step extends libbase {
 
     }
 
-    public function get_plugin_settings()
-    {
+    /**
+     * Define plugin settings for the plugin.
+     */
+    public function get_plugin_settings() {
         global $ADMIN;
 
         // Page to show the list of backed up courses.
         $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_courses',
             get_string('backedupcourses', 'tool_lcbackupcoursestep'),
             new moodle_url('/admin/tool/lcbackupcoursestep/courses.php')));
-
     }
-
 }

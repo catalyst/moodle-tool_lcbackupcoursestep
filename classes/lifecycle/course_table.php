@@ -14,17 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Table class for handling course backup data.
+ *
+ * @package    tool_lcbackupcoursestep
+ * @copyright  2024 Catalyst
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_lcbackupcoursestep\lifecycle;
 
 defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->libdir . '/tablelib.php');
 
-class course_table extends \table_sql
-{
-
+class course_table extends \table_sql {
     /**
-     * @var array "cached" lang strings
+     * @var array Cached lang strings for actions.
      */
     private $strings;
 
@@ -33,13 +39,12 @@ class course_table extends \table_sql
      *
      * @throws \coding_exception
      */
-    public function __construct($filterdata = [])
-    {
+    public function __construct($filterdata = []) {
         global $DB;
 
         parent::__construct('tool_lcbackupcoursestep-course');
 
-        // Action buttons string
+        // Action buttons string.
         $this->strings = [
             'download' => get_string('download'),
             'restore' => get_string('restore'),
@@ -47,29 +52,37 @@ class course_table extends \table_sql
 
         // Build the SQL.
         $fields = 'f.id as id,
-                   co.id as courseid, co.shortname as courseshortname, co.fullname as coursefullname,
-                   f.filename as filename, f.filesize as filesize, f.timecreated as createdat';
+            COALESCE(co.id, md.oldcourseid) as courseid,
+            COALESCE(co.shortname, md.shortname) as courseshortname,
+            COALESCE(co.fullname, md.fullname) as coursefullname,
+            f.filename as filename, f.filesize as filesize, f.timecreated as createdat';
         $from = '{files} f
-                 JOIN {context} c ON c.id = f.contextid
-                 JOIN {course} co ON co.id = c.instanceid';
+            JOIN {context} c ON c.id = f.contextid
+            LEFT JOIN {course} co ON co.id = c.instanceid
+            LEFT JOIN {tool_lcbackupcoursestep_metadata} md ON f.id = md.fileid';
 
         $where = ["f.component = :component AND filename <> '.'"];
         $params = ['component' => 'tool_lcbackupcoursestep'];
 
+        // Check for both course context and system context.
+        $where[] = "(c.contextlevel = :coursecontext OR c.contextlevel = :systemcontext)";
+        $params['coursecontext'] = CONTEXT_COURSE;
+        $params['systemcontext'] = CONTEXT_SYSTEM;
+
         // Filtering.
         if ($filterdata) {
             if ($filterdata->shortname) {
-                $where[] = $DB->sql_like('co.shortname', ':shortname', false, false);
+                $where[] = $DB->sql_like('COALESCE(co.shortname, md.shortname)', ':shortname', false, false);
                 $params['shortname'] = '%' . $DB->sql_like_escape($filterdata->shortname) . '%';
             }
 
             if ($filterdata->fullname) {
-                $where[] = $DB->sql_like('co.fullname', ':fullname', false, false);
+                $where[] = $DB->sql_like('COALESCE(co.fullname, md.fullname)', ':fullname', false, false);
                 $params['fullname'] = '%' . $DB->sql_like_escape($filterdata->fullname) . '%';
             }
 
             if ($filterdata->courseid) {
-                $where[] = 'co.id = :courseid';
+                $where[] = 'COALESCE(co.id, md.oldcourseid) = :courseid';
                 $params['courseid'] = $filterdata->courseid;
             }
         }
@@ -113,8 +126,7 @@ class course_table extends \table_sql
      * @param object $row
      * @return string
      */
-    public function col_actions($row)
-    {
+    public function col_actions($row) {
         global $OUTPUT;
 
         $actionmenu = new \action_menu();
@@ -142,16 +154,17 @@ class course_table extends \table_sql
      * @param $row
      * @return string
      */
-    public function col_createdat($row)
-    {
+    public function col_createdat($row) {
         return userdate($row->createdat);
     }
 
     /**
-     * Display size in user friendly format.
+     * Display size in a user-friendly format.
+     *
+     * @param $row
+     * @return string
      */
-    public function col_filesize($row)
-    {
+    public function col_filesize($row) {
         return display_size($row->filesize);
     }
 }
