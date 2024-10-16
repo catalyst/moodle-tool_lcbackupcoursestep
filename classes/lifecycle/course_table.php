@@ -20,8 +20,14 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->libdir . '/tablelib.php');
 
-class course_table extends \table_sql
-{
+/**
+ * Backup course table.
+ *
+ * @package     tool_lcbackupcoursestep
+ * @copyright   2024 Catalyst IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class course_table extends \table_sql {
 
     /**
      * @var array "cached" lang strings
@@ -31,15 +37,14 @@ class course_table extends \table_sql
     /**
      * Constructor for delayed_courses_table.
      *
-     * @throws \coding_exception
+     * @param array $filterdata Filter data.
      */
-    public function __construct($filterdata = [])
-    {
+    public function __construct($filterdata = []) {
         global $DB;
 
         parent::__construct('tool_lcbackupcoursestep-course');
 
-        // Action buttons string
+        // Action buttons string.
         $this->strings = [
             'download' => get_string('download'),
             'restore' => get_string('restore'),
@@ -113,8 +118,7 @@ class course_table extends \table_sql
      * @param object $row
      * @return string
      */
-    public function col_actions($row)
-    {
+    public function col_actions($row) {
         global $OUTPUT;
 
         $actionmenu = new \action_menu();
@@ -139,19 +143,20 @@ class course_table extends \table_sql
     /**
      * Display time when the file was created.
      *
-     * @param $row
+     * @param object $row
      * @return string
      */
-    public function col_createdat($row)
-    {
+    public function col_createdat($row) {
         return userdate($row->createdat);
     }
 
     /**
      * Display size in user friendly format.
+     *
+     * @param object $row
+     * @return string
      */
-    public function col_filesize($row)
-    {
+    public function col_filesize($row) {
         return display_size($row->filesize);
     }
 }

@@ -17,8 +17,9 @@
 /**
  * Displays backed up courses.
  *
- * @package tool_lcbackupcourselogstep
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     tool_lcbackupcoursestep
+ * @copyright   2024 Catalyst IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 use tool_lcbackupcoursestep\lifecycle\course_table;
@@ -66,11 +67,11 @@ if ($action) {
         case 'restore':
             $context = \context_system::instance();
             $restoreurl = new \moodle_url('/backup/restore.php',
-                array(
+                [
                     'contextid' => $context->id,
                     'pathnamehash' => $file->get_pathnamehash(),
                     'contenthash' => $file->get_contenthash(),
-                )
+                ]
             );
             redirect($restoreurl);
         default:
