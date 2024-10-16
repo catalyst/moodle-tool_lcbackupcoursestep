@@ -15,10 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Back up course
+ * Version details.
  *
- * @package    core
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     tool_lcbackupcoursestep
+ * @copyright   2024 Catalyst IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -27,8 +28,8 @@ $plugin->version   = 2023100400;
 $plugin->requires  = 2022041200;
 $plugin->component = 'tool_lcbackupcoursestep';
 
-$plugin->dependencies = array(
-    'tool_lifecycle' => 2023050201
-);
+$plugin->dependencies = [
+    'tool_lifecycle' => 2023050201,
+];
 
 $plugin->supported = [401, 405];

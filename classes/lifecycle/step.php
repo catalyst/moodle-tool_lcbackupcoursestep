@@ -16,6 +16,8 @@
 
 namespace tool_lcbackupcoursestep\lifecycle;
 
+defined('MOODLE_INTERNAL') || die();
+
 global $CFG;
 require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
 
@@ -28,20 +30,42 @@ use tool_lifecycle\settings_type;
 use tool_lifecycle\step\instance_setting;
 use tool_lifecycle\step\libbase;
 
-defined('MOODLE_INTERNAL') || die();
-
+/**
+ * Defines the backup course step.
+ *
+ * @package     tool_lcbackupcoursestep
+ * @copyright   2024 Catalyst IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class step extends libbase {
-    public function get_subpluginname()
-    {
+    /**
+     * Returns the subplugin name.
+     *
+     * @return string
+     */
+    public function get_subpluginname() {
         return 'tool_lcbackupcoursestep';
     }
 
+
+    /**
+     * Returns the description.
+     *
+     * @return string
+     */
     public function get_plugin_description() {
         return "Backup course";
     }
 
-    public function process_course($processid, $instanceid, $course)
-    {
+    /**
+     * Processes the course.
+     *
+     * @param int $processid the process id.
+     * @param int $instanceid step instance id.
+     * @param object $course the course object.
+     * @return step_response
+     */
+    public function process_course($processid, $instanceid, $course) {
         $courseid = $course->id;
 
         // Get backup settings.
@@ -109,6 +133,11 @@ class step extends libbase {
         return step_response::proceed();
     }
 
+    /**
+     * Returns the instance settings.
+     *
+     * @return array
+     */
     public function instance_settings() {
         return [
             new instance_setting('backup_users', PARAM_BOOL, true),
@@ -132,6 +161,11 @@ class step extends libbase {
         ];
     }
 
+    /**
+     * Adds the instance form definition.
+     *
+     * @param \moodleform $mform the form.
+     */
     public function extend_add_instance_form_definition($mform) {
         // Backup settings.
 
@@ -224,18 +258,18 @@ class step extends libbase {
         $mform->addElement('advcheckbox', 'backup_legacyfiles', get_string('generallegacyfiles', 'backup'));
         $mform->setType('backup_legacyfiles', PARAM_BOOL);
         $mform->setDefault('backup_legacyfiles', true);
-
     }
 
-    public function get_plugin_settings()
-    {
+    /**
+     * Returns the instance settings.
+     *
+     * @return void
+     */
+    public function get_plugin_settings() {
         global $ADMIN;
-
         // Page to show the list of backed up courses.
         $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_courses',
             get_string('backedupcourses', 'tool_lcbackupcoursestep'),
             new moodle_url('/admin/tool/lcbackupcoursestep/courses.php')));
-
     }
-
 }

@@ -17,10 +17,11 @@
 /**
  * Trigger test for end date delay trigger.
  *
- * @package    tool_lcbackupcoursestep
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     tool_lcbackupcoursestep
+ * @copyright   2024 Catalyst IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace tool_lcbackupcoursestep\tests;
+namespace tool_lcbackupcoursestep;
 
 use backup;
 use restore_controller;
@@ -33,8 +34,6 @@ use tool_lifecycle\local\manager\trigger_manager;
 use tool_lifecycle\local\manager\workflow_manager;
 use tool_lifecycle\processor;
 use tool_lifecycle\settings_type;
-
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * Trigger test for start date delay trigger.
@@ -58,9 +57,13 @@ class step_test extends \advanced_testcase {
     /** @var \stdClass $course Instance of the course under test. */
     private $course;
 
+    /** @var \stdClass $student Instance of the student user. */
     private $student;
 
-    public function setUp() : void {
+    /**
+     * Set up the test.
+     */
+    public function setUp(): void {
         global $USER, $DB;
 
         // We do not need a sesskey check in these tests.
@@ -109,10 +112,10 @@ class step_test extends \advanced_testcase {
         $this->student = $this->getDataGenerator()->create_user();
         $this->getDataGenerator()->enrol_user($this->student->id, $this->course->id);
 
-        // Create an assigment in the course
+        // Create an assigment in the course.
         $this->getDataGenerator()->create_module('assign', [
             'name' => "Test assign",
-            'course' => $this->course->id
+            'course' => $this->course->id,
         ]);
 
         // Activate the workflow.
@@ -121,6 +124,7 @@ class step_test extends \advanced_testcase {
 
     /**
      * Test course is backed up.
+     * @covers \tool_lcbackupcoursestep\lifecycle\step::process_course
      */
     public function test_backup_course_step() {
         global $DB, $CFG;
@@ -146,7 +150,7 @@ class step_test extends \advanced_testcase {
                 'component' => 'tool_lcbackupcoursestep',
                 'filearea' => 'course_backup',
                 'filepath' => '/',
-                'filename' => '.'
+                'filename' => '.',
             ]
         );
 
@@ -170,7 +174,7 @@ class step_test extends \advanced_testcase {
         $path = $CFG->tempdir . DIRECTORY_SEPARATOR . "backup" . DIRECTORY_SEPARATOR . $backupdir;
         $storedfile->extract_to_pathname(get_file_packer('application/vnd.moodle.backup'), $path);
 
-        // Restore course
+        // Restore course.
         list($fullname, $shortname) = restore_dbops::calculate_course_names(0, get_string('restoringcourse', 'backup'),
             get_string('restoringcourseshortname', 'backup'));
 
@@ -197,7 +201,5 @@ class step_test extends \advanced_testcase {
 
         // There is an assignment in the course.
         $this->assertNotEmpty($DB->get_record('assign', ['course' => $courseid]));
-
     }
-
 }
