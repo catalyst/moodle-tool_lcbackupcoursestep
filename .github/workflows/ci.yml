@@ -1,0 +1,10 @@
+# .github/workflows/ci.yml
+name: ci
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    uses: catalyst/catalyst-moodle-workflows/.github/workflows/ci.yml@main
+    with:
+       extra_plugin_runners: 'moodle-plugin-ci add-plugin catalyst/moodle-tool_lifecycle'
