@@ -52,37 +52,29 @@ class course_table extends \table_sql {
 
         // Build the SQL.
         $fields = 'f.id as id,
-            COALESCE(co.id, md.oldcourseid) as courseid,
-            COALESCE(co.shortname, md.shortname) as courseshortname,
-            COALESCE(co.fullname, md.fullname) as coursefullname,
+            md.oldcourseid as courseid, md.shortname as courseshortname, md.fullname as coursefullname,
             f.filename as filename, f.filesize as filesize, f.timecreated as createdat';
         $from = '{files} f
-            JOIN {context} c ON c.id = f.contextid
-            LEFT JOIN {course} co ON co.id = c.instanceid
-            LEFT JOIN {tool_lcbackupcoursestep_metadata} md ON f.id = md.fileid';
+              JOIN {context} c ON c.id = f.contextid
+              LEFT JOIN {tool_lcbackupcoursestep_metadata} md ON f.id = md.fileid';
 
         $where = ["f.component = :component AND filename <> '.'"];
         $params = ['component' => 'tool_lcbackupcoursestep'];
 
-        // Check for both course context and system context.
-        $where[] = "(c.contextlevel = :coursecontext OR c.contextlevel = :systemcontext)";
-        $params['coursecontext'] = CONTEXT_COURSE;
-        $params['systemcontext'] = CONTEXT_SYSTEM;
-
         // Filtering.
         if ($filterdata) {
             if ($filterdata->shortname) {
-                $where[] = $DB->sql_like('COALESCE(co.shortname, md.shortname)', ':shortname', false, false);
+                $where[] = $DB->sql_like('md.shortname', ':shortname', false, false);
                 $params['shortname'] = '%' . $DB->sql_like_escape($filterdata->shortname) . '%';
             }
 
             if ($filterdata->fullname) {
-                $where[] = $DB->sql_like('COALESCE(co.fullname, md.fullname)', ':fullname', false, false);
+                $where[] = $DB->sql_like('md.fullname', ':fullname', false, false);
                 $params['fullname'] = '%' . $DB->sql_like_escape($filterdata->fullname) . '%';
             }
 
             if ($filterdata->courseid) {
-                $where[] = 'COALESCE(co.id, md.oldcourseid) = :courseid';
+                $where[] = 'md.oldcourseid = :courseid';
                 $params['courseid'] = $filterdata->courseid;
             }
         }
