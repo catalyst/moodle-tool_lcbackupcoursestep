@@ -133,6 +133,14 @@ class step extends libbase {
             $fs = get_file_storage();
             $newfile = $fs->create_file_from_storedfile($filerecord, $file);
 
+            $DB->insert_record('tool_lcbackupcoursestep_metadata', [
+                    'shortname' => $course->shortname,
+                    'fullname' => $course->fullname,
+                    'oldcourseid' => $course->id,
+                    'fileid' => $newfile->get_id(),
+                    'timecreated' => time(),
+            ]);
+
             // Upload file to S3.
             helper::upload_file($processid, $instanceid, $courseid, $newfile);
 
@@ -180,6 +188,7 @@ class step extends libbase {
             new instance_setting('backup_groups', PARAM_BOOL, true),
             new instance_setting('backup_competencies', PARAM_BOOL, true),
             new instance_setting('backup_contentbankcontent', PARAM_BOOL, true),
+            new instance_setting('backup_legacyfiles', PARAM_BOOL, true),
 
             // S3 settings.
             new instance_setting('uses3', PARAM_BOOL, true),
@@ -288,6 +297,11 @@ class step extends libbase {
         $mform->addElement('advcheckbox', 'backup_contentbankcontent', get_string('generalcontentbankcontent', 'backup'));
         $mform->setType('backup_contentbankcontent', PARAM_BOOL);
         $mform->setDefault('backup_contentbankcontent', true);
+
+        // Legacy files.
+        $mform->addElement('advcheckbox', 'backup_legacyfiles', get_string('generallegacyfiles', 'backup'));
+        $mform->setType('backup_legacyfiles', PARAM_BOOL);
+        $mform->setDefault('backup_legacyfiles', true);
 
         // S3 configuration.
         $mform->addElement('header', 's3settings', get_string('s3settings', 'tool_lcbackupcoursestep'));
