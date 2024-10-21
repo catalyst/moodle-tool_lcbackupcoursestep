@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Table class for handling course backup data.
+ *
+ * @package    tool_lcbackupcoursestep
+ * @copyright  2024 Catalyst
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_lcbackupcoursestep\lifecycle;
 
 defined('MOODLE_INTERNAL') || die;
@@ -52,11 +60,11 @@ class course_table extends \table_sql {
 
         // Build the SQL.
         $fields = 'f.id as id,
-                   co.id as courseid, co.shortname as courseshortname, co.fullname as coursefullname,
-                   f.filename as filename, f.filesize as filesize, f.timecreated as createdat';
+            md.oldcourseid as courseid, md.shortname as courseshortname, md.fullname as coursefullname,
+            f.filename as filename, f.filesize as filesize, f.timecreated as createdat';
         $from = '{files} f
-                 JOIN {context} c ON c.id = f.contextid
-                 JOIN {course} co ON co.id = c.instanceid';
+              JOIN {context} c ON c.id = f.contextid
+              LEFT JOIN {tool_lcbackupcoursestep_metadata} md ON f.id = md.fileid';
 
         $where = ["f.component = :component AND filename <> '.'"];
         $params = ['component' => 'tool_lcbackupcoursestep'];
@@ -64,17 +72,17 @@ class course_table extends \table_sql {
         // Filtering.
         if ($filterdata) {
             if ($filterdata->shortname) {
-                $where[] = $DB->sql_like('co.shortname', ':shortname', false, false);
+                $where[] = $DB->sql_like('md.shortname', ':shortname', false, false);
                 $params['shortname'] = '%' . $DB->sql_like_escape($filterdata->shortname) . '%';
             }
 
             if ($filterdata->fullname) {
-                $where[] = $DB->sql_like('co.fullname', ':fullname', false, false);
+                $where[] = $DB->sql_like('md.fullname', ':fullname', false, false);
                 $params['fullname'] = '%' . $DB->sql_like_escape($filterdata->fullname) . '%';
             }
 
             if ($filterdata->courseid) {
-                $where[] = 'co.id = :courseid';
+                $where[] = 'md.oldcourseid = :courseid';
                 $params['courseid'] = $filterdata->courseid;
             }
         }
