@@ -25,6 +25,7 @@
 $string['pluginname'] = 'Backup course step';
 $string['privacy:metadata'] = 'The plugin does not store any personal data.';
 $string['backedupcourses'] = 'Backed up courses';
+$string['backupsettings'] = 'Backup settings';
 $string['course_id_header'] = 'Course ID';
 $string['course_shortname_header'] = 'Course short name';
 $string['course_fullname_header'] = 'Course fullname name';
@@ -32,3 +33,15 @@ $string['filename_header'] = 'File name';
 $string['filesize_header'] = 'File size';
 $string['createdat_header'] = 'Created at';
 $string['actions_header'] = 'Actions';
+$string['s3_bucket'] = 'Bucket';
+$string['s3_connection_error'] = 'Connection error: {$a}';
+$string['s3_connection_success'] = 'Connection successful';
+$string['s3_key'] = 'Key';
+$string['s3_region'] = 'Region';
+$string['s3_secret'] = 'Secret';
+$string['s3_unmet_dependency'] = 'This Amazon S3 feature is optional and requires the local_aws plugin to be installed.';
+$string['s3_useproxy'] = 'Use proxy';
+$string['s3_usesdkcreds'] = 'Use the default credential provider chain to find AWS credentials';
+$string['s3settings'] = 'Amazon S3 settings';
+$string['uses3'] = 'Push backups to Amazon S3 bucket';
+
