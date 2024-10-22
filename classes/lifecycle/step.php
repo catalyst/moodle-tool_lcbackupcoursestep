@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Step for backing up a course in the lifecycle process.
+ *
+ * @package    tool_lcbackupcoursestep
+ * @copyright  2024 Catalyst
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 namespace tool_lcbackupcoursestep\lifecycle;
 
 defined('MOODLE_INTERNAL') || die();
@@ -66,6 +74,8 @@ class step extends libbase {
      * @return step_response
      */
     public function process_course($processid, $instanceid, $course) {
+        global $DB;
+
         $courseid = $course->id;
 
         // Get backup settings.
@@ -110,7 +120,7 @@ class step extends libbase {
         if (!empty($file)) {
             // Prepare file record.
             $filerecord = [
-                'contextid' => \context_course::instance($courseid)->id,
+                'contextid' => \context_system::instance()->id,
                 'component' => 'tool_lcbackupcoursestep',
                 'filearea' => 'course_backup',
                 'itemid' => $instanceid,
@@ -120,7 +130,15 @@ class step extends libbase {
 
             // Save file.
             $fs = get_file_storage();
-            $fs->create_file_from_storedfile($filerecord, $file);
+            $newfile = $fs->create_file_from_storedfile($filerecord, $file);
+
+            $DB->insert_record('tool_lcbackupcoursestep_metadata', [
+                'shortname' => $course->shortname,
+                'fullname' => $course->fullname,
+                'oldcourseid' => $course->id,
+                'fileid' => $newfile->get_id(),
+                'timecreated' => time(),
+            ]);
 
             // Delete file.
             $file->delete();
