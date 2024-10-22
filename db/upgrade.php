@@ -37,6 +37,26 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
     global $DB;
     $dbman = $DB->get_manager();
 
+    if ($oldversion < 2023100401) {
+        // New table to be created.
+        $table = new xmldb_table('tool_lcbackupcoursestep_s3');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('processid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('instanceid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('filename', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+        $table->add_field('contenthash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null);
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('processid_idx', XMLDB_INDEX_NOTUNIQUE, ['processid']);
+        $table->add_index('courseid_idx', XMLDB_INDEX_NOTUNIQUE, ['courseid']);
+
+        if (!$DB->get_manager()->table_exists($table)) {
+            $DB->get_manager()->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2023100401, 'tool', 'lcbackupcoursestep');
+    }
     if ($oldversion < 2024101000) {
 
         $table = new xmldb_table('tool_lcbackupcoursestep_meta');
@@ -71,9 +91,9 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
                AND f.filesize > 0
         ";
         $DB->execute($sql1, [
-            'contextlevel' => CONTEXT_COURSE,
-            'component' => 'tool_lcbackupcoursestep',
-            'filearea' => 'course_backup',
+                'contextlevel' => CONTEXT_COURSE,
+                'component' => 'tool_lcbackupcoursestep',
+                'filearea' => 'course_backup',
         ]);
 
         $sql2 = "
@@ -91,10 +111,10 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
                   )
         ";
         $DB->execute($sql2, [
-            'contextid' => \context_system::instance()->id,
-            'contextlevel' => CONTEXT_COURSE,
-            'component' => 'tool_lcbackupcoursestep',
-            'filearea' => 'course_backup',
+                'contextid' => \context_system::instance()->id,
+                'contextlevel' => CONTEXT_COURSE,
+                'component' => 'tool_lcbackupcoursestep',
+                'filearea' => 'course_backup',
         ]);
 
         upgrade_plugin_savepoint(true, 2024101000, 'tool', 'lcbackupcoursestep');
@@ -107,7 +127,5 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025021900, 'tool', 'lcbackupcoursestep');
     }
 
-
     return true;
 }
-
