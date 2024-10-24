@@ -33,12 +33,25 @@ use tool_lifecycle\settings_type;
 class helper {
 
     /**
+     * Check if local/aws plugin installed.
+     *
+     * return bool true if dependency is met.
+     */
+    public static function met_dependency(): bool {
+        global $CFG;
+        if (!file_exists($CFG->dirroot . '/local/aws/version.php')) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Create a new S3 client.
      *
      * @param array $settings amazon s3 settings.
      * @return \Aws\S3\S3Client
      */
-    public static function create_client($settings) {
+    private static function create_client(array $settings) {
         // Connection options.
         $options = [
             'version' => 'latest',
@@ -75,16 +88,21 @@ class helper {
      * @param array $settings amazon s3 settings.
      * @return stdClass
      */
-    public static function check_connection($settings): stdClass {
+    public static function check_connection(array $settings): stdClass {
         $connection = new stdClass();
         $connection->success = true;
         $connection->details = '';
+
+        // Check dependency.
+        if (!self::met_dependency()) {
+            $connection->success = false;
+            $connection->details = get_string('s3_unmet_dependency', 'tool_lcbackupcoursestep');
+            return $connection;
+        }
+
         try {
             $client = self::create_client($settings);
             $client->headBucket(['Bucket' => $settings['s3_bucket']]);
-        } catch (\Aws\S3\Exception\S3Exception $e) {
-            $connection->success = false;
-            $connection->details = $e->getMessage();
         } catch (\Exception $e) {
             $connection->success = false;
             $connection->details = $e->getMessage();
@@ -100,7 +118,7 @@ class helper {
      * @param int $courseid course id.
      * @param stored_file $file file to upload.
      */
-    public static function upload_file($processid, $instanceid, $courseid, $file) {
+    public static function upload_file(int $processid, int $instanceid, int $courseid, stored_file $file) {
         global $DB;
 
         // Get S3 settings.
