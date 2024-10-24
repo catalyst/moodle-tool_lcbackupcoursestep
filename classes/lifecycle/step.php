@@ -292,13 +292,14 @@ class step extends libbase {
         // S3 configuration.
         $mform->addElement('header', 's3settings', get_string('s3settings', 'tool_lcbackupcoursestep'));
 
-        // Check if local_aws plugin exists.
-        if (!file_exists($CFG->dirroot . '/local/aws/version.php')) {
+        // Check dependency.
+        if (helper::met_dependency()) {
+            $this->add_amazon_s3_settings($mform);
+        } else {
             $mform->addElement('html', $OUTPUT->notification(get_string('s3_unmet_dependency', 'tool_lcbackupcoursestep'),
                 \core\output\notification::NOTIFY_WARNING));
-        } else {
-            $this->add_amazon_s3_settings($mform);
         }
+
     }
 
     /**
@@ -361,7 +362,7 @@ class step extends libbase {
 
         // Check if S3 is enabled.
         if (!empty($data['uses3'])) {
-            if (!$data['usesdkcreds']) {
+            if (empty($data['s3_usesdkcreds'])) {
                 // Check if the key is empty.
                 if (empty($data['s3_key'])) {
                     $error['s3_key'] = get_string('required');
@@ -395,7 +396,7 @@ class step extends libbase {
      */
     public function extend_add_instance_form_definition_after_data($mform, $settings) {
         global $OUTPUT;
-        if ($settings['uses3']) {
+        if (!empty($settings['uses3'])) {
             $connection = helper::check_connection($settings);
             if (!$connection->success) {
                 $message = $OUTPUT->notification(get_string('s3_connection_error', 'tool_lcbackupcoursestep', $connection->details),
