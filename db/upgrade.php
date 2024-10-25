@@ -35,6 +35,7 @@
  */
 function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
     global $DB;
+
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2023100401) {
@@ -51,11 +52,32 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
         $table->add_index('processid_idx', XMLDB_INDEX_NOTUNIQUE, ['processid']);
         $table->add_index('courseid_idx', XMLDB_INDEX_NOTUNIQUE, ['courseid']);
 
-        if (!$DB->get_manager()->table_exists($table)) {
-            $DB->get_manager()->create_table($table);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
         }
 
         upgrade_plugin_savepoint(true, 2023100401, 'tool', 'lcbackupcoursestep');
+    }
+
+    if ($oldversion < 2023100402) {
+
+        // Define field bucketname to be added to tool_lcbackupcoursestep_s3.
+        $table = new xmldb_table('tool_lcbackupcoursestep_s3');
+
+        // Conditionally launch add field bucketname.
+        $field = new xmldb_field('bucketname', XMLDB_TYPE_CHAR, '512', null, null, null, null, 'contenthash');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Conditionally launch add field timecreated.
+        $field = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'bucketname');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Lcbackupcoursestep savepoint reached.
+        upgrade_plugin_savepoint(true, 2023100402, 'tool', 'lcbackupcoursestep');
     }
 
     if ($oldversion < 2024101000) {
