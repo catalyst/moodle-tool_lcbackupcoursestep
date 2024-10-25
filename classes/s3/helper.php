@@ -42,6 +42,7 @@ class helper {
         if (!file_exists($CFG->dirroot . '/local/aws/version.php')) {
             return false;
         }
+        require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
         return true;
     }
 
@@ -133,7 +134,7 @@ class helper {
         $connection = self::check_connection($settings);
 
         if (!$connection->success) {
-            throw new \moodle_exception('s3_connection_error', 'tool_lcbackupcoursestep', $connection->details);
+            throw new \moodle_exception('s3_connection_error', 'tool_lcbackupcoursestep', '', $connection->details);
         }
 
         // Upload file.
@@ -151,6 +152,8 @@ class helper {
         $filedetails->courseid = $courseid;
         $filedetails->filename = $file->get_filename();
         $filedetails->contenthash = $file->get_contenthash();
+        $filedetails->bucketname = $settings['s3_bucket'];
+        $filedetails->timecreated = time();
         $DB->insert_record('tool_lcbackupcoursestep_s3', $filedetails);
     }
 

@@ -23,6 +23,7 @@ require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
 
 use admin_externalpage;
 use backup_plan_dbops;
+use core\output\notification;
 use moodle_url;
 use tool_lcbackupcoursestep\s3\helper;
 use tool_lifecycle\local\manager\settings_manager;
@@ -279,7 +280,7 @@ class step extends libbase {
             $this->add_amazon_s3_settings($mform);
         } else {
             $mform->addElement('html', $OUTPUT->notification(get_string('s3_unmet_dependency', 'tool_lcbackupcoursestep'),
-                \core\output\notification::NOTIFY_WARNING));
+                notification::NOTIFY_WARNING));
         }
 
     }
@@ -365,6 +366,15 @@ class step extends libbase {
             if (empty($data['s3_region'])) {
                 $error['s3_region'] = get_string('required');
             }
+
+            // Check connection if there is no error.
+            if (empty($error)) {
+                $connection = helper::check_connection($data);
+                if (!$connection->success) {
+                    // We already show error on s3_status field, so no need to show it here.
+                    $error['s3_status'] = '';
+                }
+            }
         }
 
         return $error;
@@ -379,14 +389,15 @@ class step extends libbase {
     public function extend_add_instance_form_definition_after_data($mform, $settings) {
         global $OUTPUT;
         if (!empty($settings['uses3'])) {
-            $connection = helper::check_connection($settings);
+            $data = $mform->exportValues();
+            $connection = helper::check_connection($data);
             if (!$connection->success) {
                 $message = $OUTPUT->notification(get_string('s3_connection_error', 'tool_lcbackupcoursestep', $connection->details),
-                    \core\output\notification::NOTIFY_ERROR);
+                    notification::NOTIFY_ERROR);
                 $mform->setDefault('s3_status', $message);
             } else {
                 $message = $OUTPUT->notification(get_string('s3_connection_success', 'tool_lcbackupcoursestep'),
-                    \core\output\notification::NOTIFY_SUCCESS);
+                    notification::NOTIFY_SUCCESS);
                 $mform->setDefault('s3_status', $message);
             }
         }
