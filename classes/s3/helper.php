@@ -152,6 +152,8 @@ class helper {
         $filedetails->courseid = $courseid;
         $filedetails->filename = $file->get_filename();
         $filedetails->contenthash = $file->get_contenthash();
+        $filedetails->bucketname = $settings['s3_bucket'];
+        $filedetails->timecreated = time();
         $DB->insert_record('tool_lcbackupcoursestep_s3', $filedetails);
     }
 

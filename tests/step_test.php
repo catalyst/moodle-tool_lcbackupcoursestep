@@ -261,5 +261,6 @@ class step_test extends \advanced_testcase {
         $filedetails = $DB->get_record('tool_lcbackupcoursestep_s3', ['processid' => $process->id]);
         $this->assertEquals($filedetails->courseid, $this->course->id);
         $this->assertEquals($filedetails->filename, $file->filename);
+        $this->assertEquals('testbucket', $filedetails->bucketname);
     }
 }
