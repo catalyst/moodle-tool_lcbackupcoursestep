@@ -43,5 +43,6 @@ $string['s3_unmet_dependency'] = 'This Amazon S3 feature is optional and require
 $string['s3_useproxy'] = 'Use proxy';
 $string['s3_usesdkcreds'] = 'Use the default credential provider chain to find AWS credentials';
 $string['s3settings'] = 'Amazon S3 settings';
+$string['taskfailed'] = 'Adhoc task failed';
 $string['uses3'] = 'Push backups to Amazon S3 bucket';
 

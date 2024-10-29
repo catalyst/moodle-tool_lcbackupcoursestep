@@ -80,5 +80,23 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2023100402, 'tool', 'lcbackupcoursestep');
     }
 
+    if ($oldversion < 2023100403) {
+        // Define new table tool_lcbackupcoursestep_task.
+        $table = new xmldb_table('tool_lcbackupcoursestep_task');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('processid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'id');
+        $table->add_field('taskid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'processid');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('processid_idx', XMLDB_INDEX_NOTUNIQUE, ['processid']);
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Savepoint reached.
+        upgrade_plugin_savepoint(true, 2023100403, 'tool', 'lcbackupcoursestep');
+    }
+
     return true;
 }

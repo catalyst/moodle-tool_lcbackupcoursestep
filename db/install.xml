@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="admin/tool/lcbackupcoursestep/db" VERSION="20241025" COMMENT="XMLDB file for Moodle admin/tool/lcbackupcoursestep"
+<XMLDB PATH="admin/tool/lcbackupcoursestep/db" VERSION="20241029" COMMENT="XMLDB file for Moodle admin/tool/lcbackupcoursestep"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
 >
@@ -21,6 +21,19 @@
       <INDEXES>
         <INDEX NAME="processid_idx" UNIQUE="false" FIELDS="processid"/>
         <INDEX NAME="courseid_idx" UNIQUE="false" FIELDS="courseid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="tool_lcbackupcoursestep_task" COMMENT="Reference to a adhoc task">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="processid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Process ID"/>
+        <FIELD NAME="taskid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="ID of course_backup_s3_task"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="processid_idx" UNIQUE="false" FIELDS="processid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

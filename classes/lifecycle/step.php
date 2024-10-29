@@ -22,13 +22,11 @@ global $CFG;
 require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
 
 use admin_externalpage;
-use backup_plan_dbops;
 use core\output\notification;
 use moodle_url;
 use tool_lcbackupcoursestep\s3\helper;
-use tool_lifecycle\local\manager\settings_manager;
+use tool_lcbackupcoursestep\task\course_backup_s3_task;
 use tool_lifecycle\local\response\step_response;
-use tool_lifecycle\settings_type;
 use tool_lifecycle\step\instance_setting;
 use tool_lifecycle\step\libbase;
 
@@ -68,74 +66,84 @@ class step extends libbase {
      * @return step_response
      */
     public function process_course($processid, $instanceid, $course) {
+        global $DB;
         $courseid = $course->id;
 
-        // Get backup settings.
-        $settings = settings_manager::get_settings($instanceid, settings_type::STEP);
+        // Create and queue adhoc task.
+        $task = new \tool_lcbackupcoursestep\task\course_backup_s3_task();
+        $task->set_custom_data((object)[
+            'processid' => $processid,
+            'instanceid' => $instanceid,
+            'courseid' => $courseid,
+        ]);
 
-        // Backup course.
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $courseid, \backup::FORMAT_MOODLE,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, get_admin()->id);
+        // Schedule the task for next 1 minute.
+        $task->set_next_run_time(time() + 60);
+        \core\task\manager::queue_adhoc_task($task, true);
 
-        // Settings.
-        $backupplan = $bc->get_plan();
-        $keyprefix = "backup_";
-        foreach ($settings as $key => $value) {
-            // The keys are prefixed with backup_, check then remove.
-            if (strpos($key, $keyprefix) !== 0) {
-                continue;
-            }
+        // Save task id.
+        $DB->insert_record('tool_lcbackupcoursestep_task', (object)[
+            'processid' => $processid,
+            'taskid' => $this->find_taskid($task),
+        ]);
 
-            $key = substr($key, strlen($keyprefix));
-            $setting = $backupplan->get_setting($key);
+        return step_response::waiting();
+    }
 
-            if ($setting->get_status() === \base_setting::NOT_LOCKED) {
-                $setting->set_value($value);
+    /**
+     * Find task id from task_adhoc table.
+     *
+     * @param course_backup_s3_task $task
+     * @return int the task id.
+     */
+    public function find_taskid(course_backup_s3_task $task): int {
+        global $DB;
+
+        $dbtasks = $DB->get_records('task_adhoc',
+            ['classname' => '\tool_lcbackupcoursestep\task\course_backup_s3_task'],
+            'timecreated DESC'
+        );
+
+        $taskid = 0;
+
+        foreach ($dbtasks as $dbtaskid => $dbtask) {
+            if ($dbtask->customdata === $task->get_custom_data_as_string()) {
+                $taskid = $dbtaskid;
+                break;
             }
         }
+        return $taskid;
+    }
 
-        // Set the default filename.
-        $format = $bc->get_format();
-        $type = $bc->get_type();
-        $id = $bc->get_id();
-        $users = $bc->get_plan()->get_setting('users')->get_value();
-        $anonymised = $bc->get_plan()->get_setting('anonymize')->get_value();
-        $filename = backup_plan_dbops::get_default_backup_filename($format, $type, $id, $users, $anonymised);
-        $backupplan->get_setting('filename')->set_value($filename);
+    /**
+     * Processes the course in status waiting and returns a response.
 
-        // Run backup.
-        $bc->execute_plan();
-        $results = $bc->get_results();
+     * @param int $processid of the respective process.
+     * @param int $instanceid of the step instance.
+     * @param mixed $course to be processed.
+     * @return step_response
+     */
+    public function process_waiting_course($processid, $instanceid, $course) {
+        global $DB;
+        // Find the task of this process.
+        $processtask = $DB->get_record('tool_lcbackupcoursestep_task', ['processid' => $processid], '*', 'MUST_EXIST');
 
-        // Copy backup file.
-        $file = $results['backup_destination'];
-        if (!empty($file)) {
-            // Prepare file record.
-            $filerecord = [
-                'contextid' => \context_course::instance($courseid)->id,
-                'component' => 'tool_lcbackupcoursestep',
-                'filearea' => 'course_backup',
-                'itemid' => $instanceid,
-                'filepath' => "/",
-                'filename' => $filename,
-            ];
+        // Find the adhoc task.
+        $adhoctask = $DB->get_record('task_adhoc', ['id' => $processtask->taskid]);
 
-            // Save file.
-            $fs = get_file_storage();
-            $newfile = $fs->create_file_from_storedfile($filerecord, $file);
-
-            // Upload file to S3.
-            helper::upload_file($processid, $instanceid, $courseid, $newfile);
-
-            // Delete file.
-            $file->delete();
+        if (!$adhoctask) {
+            // Remove the process task.
+            $DB->delete_records('tool_lcbackupcoursestep_task', ['processid' => $processid]);
+            // Return success if the task is not found.
+            return step_response::proceed();
+        } else {
+            // If there is fail delay, throw an error.
+            if ($adhoctask->faildelay) {
+                throw new \moodle_exception('taskfailed', 'tool_lcbackupcoursestep');
+            } else {
+                return step_response::waiting();
+            }
         }
-
-        // Clean up.
-        $bc->destroy();
-        unset($bc);
-
-        return step_response::proceed();
     }
 
     /**
