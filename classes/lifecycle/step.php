@@ -133,12 +133,12 @@ class step extends libbase {
             $fs = get_file_storage();
             $newfile = $fs->create_file_from_storedfile($filerecord, $file);
 
-            $DB->insert_record('tool_lcbackupcoursestep_metadata', [
-                    'shortname' => $course->shortname,
-                    'fullname' => $course->fullname,
-                    'oldcourseid' => $course->id,
-                    'fileid' => $newfile->get_id(),
-                    'timecreated' => time(),
+            $DB->insert_record('tool_lcbackupcoursestep_meta', [
+                'shortname' => $course->shortname,
+                'fullname' => $course->fullname,
+                'oldcourseid' => $course->id,
+                'fileid' => $newfile->get_id(),
+                'timecreated' => time(),
             ]);
 
             // Upload file to S3.
