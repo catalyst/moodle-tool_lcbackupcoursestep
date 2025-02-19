@@ -38,7 +38,7 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
 
     if ($oldversion < 2024101000) {
 
-        $table = new xmldb_table('tool_lcbackupcoursestep_metadata');
+        $table = new xmldb_table('tool_lcbackupcoursestep_meta');
 
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
         $table->add_field('shortname', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
@@ -79,13 +79,15 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
             UPDATE {files}
                SET contextid = :contextid
              WHERE id IN (
-                    SELECT f.id
-                      FROM {files} f
-                      JOIN {context} ctx ON ctx.id = f.contextid
-                     WHERE ctx.contextlevel = :contextlevel
-                       AND f.component = :component
-                       AND f.filearea = :filearea
-                   )
+                    SELECT id FROM (
+                        SELECT f.id
+                          FROM {files} f
+                          JOIN {context} ctx ON ctx.id = f.contextid
+                         WHERE ctx.contextlevel = :contextlevel
+                           AND f.component = :component
+                           AND f.filearea = :filearea
+                       ) as fs
+                  )
         ";
         $DB->execute($sql2, [
             'contextid' => \context_system::instance()->id,
