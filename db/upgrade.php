@@ -35,6 +35,7 @@
  */
 function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
     global $DB;
+    $dbman = $DB->get_manager();
 
     if ($oldversion < 2024101000) {
 
@@ -55,7 +56,7 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
         }
 
         $sql1 = "
-            INSERT INTO {tool_lcbackupcoursestep_metadata} (shortname, fullname, oldcourseid, fileid, timecreated)
+            INSERT INTO {tool_lcbackupcoursestep_meta} (shortname, fullname, oldcourseid, fileid, timecreated)
             SELECT crs.shortname,
                    crs.fullname,
                    crs.id AS oldcourseid,
@@ -98,6 +99,14 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
 
         upgrade_plugin_savepoint(true, 2024101000, 'tool', 'lcbackupcoursestep');
     }
+    if ($oldversion < 2025021900) {
+        $table = new xmldb_table('tool_lcbackupcoursestep_metadata');
+        if ($dbman->table_exists($table)) {
+            $dbman->rename_table($table, 'tool_lcbackupcoursestep_meta');
+        }
+        upgrade_plugin_savepoint(true, 2025021900, 'tool', 'lcbackupcoursestep');
+    }
+
 
     return true;
 }

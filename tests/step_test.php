@@ -203,7 +203,7 @@ class step_test extends \advanced_testcase {
         $this->assertNotEmpty($DB->get_record('assign', ['course' => $courseid]));
 
         // Check the metadata table for the file backup entry.
-        $metadata = $DB->get_record('tool_lcbackupcoursestep_metadata', ['fileid' => $file->id]);
+        $metadata = $DB->get_record('tool_lcbackupcoursestep_meta', ['fileid' => $file->id]);
         $this->assertNotEmpty($metadata);
 
         // Check metadata details.
