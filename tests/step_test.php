@@ -27,6 +27,7 @@ use backup;
 use restore_controller;
 use restore_dbops;
 use tool_lifecycle\action;
+use tool_lifecycle\local\entity\step_subplugin;
 use tool_lifecycle\local\entity\trigger_subplugin;
 use tool_lifecycle\local\manager\process_manager;
 use tool_lifecycle\local\manager\settings_manager;
@@ -54,6 +55,9 @@ class step_test extends \advanced_testcase {
     /** @var trigger_subplugin $trigger Instances of the triggers under test. */
     private $trigger;
 
+    /** @var step_subplugin $trigger Instances of the triggers under test. */
+    private $step;
+
     /** @var \stdClass $course Instance of the course under test. */
     private $course;
 
@@ -64,7 +68,7 @@ class step_test extends \advanced_testcase {
      * Set up the test.
      */
     public function setUp(): void {
-        global $USER, $DB;
+        global $USER, $CFG;
 
         // We do not need a sesskey check in these tests.
         $USER->ignoresesskey = true;
@@ -81,8 +85,8 @@ class step_test extends \advanced_testcase {
         $this->trigger = trigger_manager::get_triggers_for_workflow($manualworkflow->id)[0];
 
         // Step.
-        $step = $generator->create_step("instance1", "tool_lcbackupcoursestep", $manualworkflow->id);
-        settings_manager::save_settings($step->id, settings_type::STEP, "tool_lcbackupcoursestep",
+        $this->step = $generator->create_step("instance1", "tool_lcbackupcoursestep", $manualworkflow->id);
+        settings_manager::save_settings($this->step->id, settings_type::STEP, "tool_lcbackupcoursestep",
             [
                 "backup_users" => true,
                 "backup_anonymize" => false,
@@ -203,11 +207,68 @@ class step_test extends \advanced_testcase {
         $this->assertNotEmpty($DB->get_record('assign', ['course' => $courseid]));
 
         // Check the metadata table for the file backup entry.
-        $metadata = $DB->get_record('tool_lcbackupcoursestep_metadata', ['fileid' => $file->id]);
+        $metadata = $DB->get_record('tool_lcbackupcoursestep_meta', ['fileid' => $file->id]);
         $this->assertNotEmpty($metadata);
 
         // Check metadata details.
         $this->assertEquals($this->course->id, $metadata->oldcourseid);
         $this->assertEquals($this->course->shortname, $metadata->shortname);
+    }
+
+    /**
+     * Backup file is recorded after pushed to S3.
+     *
+     * @covers \tool_lcbackupcoursestep\lifecycle\step::process_course
+     */
+    public function test_backup_course_step_s3() {
+        global $DB, $CFG;
+
+        $this->resetAfterTest();
+
+        // Skip test if AWS SDK is not installed.
+        if (!file_exists($CFG->dirroot . '/local/aws/version.php')) {
+            $this->markTestSkipped('AWS SDK is not installed.');
+        }
+
+        settings_manager::save_settings($this->step->id, settings_type::STEP, "tool_lcbackupcoursestep",
+            [
+                'uses3' => true,
+                's3_bucket' => 'testbucket',
+                's3_key' => 'testkey',
+                's3_secret' => 'testsecret',
+                's3_region' => 'testregion',
+                's3_useproxy' => false,
+            ]
+        );
+
+        // Run trigger.
+        $process = process_manager::manually_trigger_process($this->course->id, $this->trigger->id);
+
+        // Run processor.
+        $processor = new processor();
+        $processor->process_courses();
+
+        // Get the file record.
+        $contextid = \context_course::instance($this->course->id)->id;
+        $sql = "contextid = :contextid
+               AND component = :component
+               AND filearea = :filearea
+               AND filepath = :filepath
+               AND filename <> :filename";
+        $file = $DB->get_record_select('files', $sql, [
+                'contextid' => $contextid,
+                'component' => 'tool_lcbackupcoursestep',
+                'filearea' => 'course_backup',
+                'filepath' => '/',
+                'filename' => '.',
+            ]
+        );
+        $this->assertNotEmpty($file);
+
+        // Check file record is saved.
+        $filedetails = $DB->get_record('tool_lcbackupcoursestep_s3', ['processid' => $process->id]);
+        $this->assertEquals($filedetails->courseid, $this->course->id);
+        $this->assertEquals($filedetails->filename, $file->filename);
+        $this->assertEquals('testbucket', $filedetails->bucketname);
     }
 }

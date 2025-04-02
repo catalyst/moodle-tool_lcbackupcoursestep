@@ -31,7 +31,9 @@ require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
 
 use admin_externalpage;
 use backup_plan_dbops;
+use core\output\notification;
 use moodle_url;
+use tool_lcbackupcoursestep\s3\helper;
 use tool_lifecycle\local\manager\settings_manager;
 use tool_lifecycle\local\response\step_response;
 use tool_lifecycle\settings_type;
@@ -132,7 +134,18 @@ class step extends libbase {
             $fs = get_file_storage();
             $newfile = $fs->create_file_from_storedfile($filerecord, $file);
 
-            $DB->insert_record('tool_lcbackupcoursestep_metadata', [
+            $DB->insert_record('tool_lcbackupcoursestep_meta', [
+                'shortname' => $course->shortname,
+                'fullname' => $course->fullname,
+                'oldcourseid' => $course->id,
+                'fileid' => $newfile->get_id(),
+                'timecreated' => time(),
+            ]);
+
+            // Upload file to S3.
+            helper::upload_file($processid, $instanceid, $courseid, $newfile);
+
+            $DB->insert_record('tool_lcbackupcoursestep_meta', [
                 'shortname' => $course->shortname,
                 'fullname' => $course->fullname,
                 'oldcourseid' => $course->id,
@@ -158,6 +171,7 @@ class step extends libbase {
      */
     public function instance_settings() {
         return [
+            // Backup settings.
             new instance_setting('backup_users', PARAM_BOOL, true),
             new instance_setting('backup_anonymize', PARAM_BOOL, true),
             new instance_setting('backup_role_assignments', PARAM_BOOL, true),
@@ -176,6 +190,15 @@ class step extends libbase {
             new instance_setting('backup_competencies', PARAM_BOOL, true),
             new instance_setting('backup_contentbankcontent', PARAM_BOOL, true),
             new instance_setting('backup_legacyfiles', PARAM_BOOL, true),
+
+            // S3 settings.
+            new instance_setting('uses3', PARAM_BOOL, true),
+            new instance_setting('s3_usesdkcreds', PARAM_BOOL, true),
+            new instance_setting('s3_key', PARAM_TEXT, true),
+            new instance_setting('s3_secret', PARAM_TEXT, true),
+            new instance_setting('s3_bucket', PARAM_TEXT, true),
+            new instance_setting('s3_region', PARAM_TEXT, true),
+            new instance_setting('s3_useproxy', PARAM_BOOL, true),
         ];
     }
 
@@ -185,7 +208,11 @@ class step extends libbase {
      * @param \moodleform $mform the form.
      */
     public function extend_add_instance_form_definition($mform) {
+        global $CFG, $OUTPUT;
+
         // Backup settings.
+        // Headers.
+        $mform->addElement('header', 'backupsettings', get_string('backupsettings', 'tool_lcbackupcoursestep'));
 
         // Users.
         $mform->addElement('advcheckbox', 'backup_users', get_string('generalusers', 'backup'));
@@ -276,6 +303,136 @@ class step extends libbase {
         $mform->addElement('advcheckbox', 'backup_legacyfiles', get_string('generallegacyfiles', 'backup'));
         $mform->setType('backup_legacyfiles', PARAM_BOOL);
         $mform->setDefault('backup_legacyfiles', true);
+
+        // S3 configuration.
+        $mform->addElement('header', 's3settings', get_string('s3settings', 'tool_lcbackupcoursestep'));
+
+        // Check dependency.
+        if (helper::met_dependency()) {
+            $this->add_amazon_s3_settings($mform);
+        } else {
+            $mform->addElement('html', $OUTPUT->notification(get_string('s3_unmet_dependency', 'tool_lcbackupcoursestep'),
+                notification::NOTIFY_WARNING));
+        }
+
+    }
+
+    /**
+     * Add Amazon S3 settings.
+     *
+     * @param \moodleform $mform the form.
+     */
+    private function add_amazon_s3_settings($mform) {
+        // Check box to enable S3.
+        $mform->addElement('advcheckbox', 'uses3',
+            get_string('uses3', 'tool_lcbackupcoursestep'), get_string('enable'));
+        $mform->setType('uses3', PARAM_BOOL);
+
+        // Status.
+        $mform->addElement('static', 's3_status');
+
+        // Use default credential provider chain to find aws credentials.
+        $mform->addElement('advcheckbox', 's3_usesdkcreds',
+            get_string('s3_usesdkcreds', 'tool_lcbackupcoursestep'), get_string('enable'));
+        $mform->setType('s3_usesdkcreds', PARAM_BOOL);
+        $mform->hideIf('s3_usesdkcreds', 'uses3', 'eq', 0);
+
+        // Key.
+        $mform->addElement('text', 's3_key', get_string('s3_key', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_key', PARAM_TEXT);
+        $mform->hideIf('s3_key', 'uses3', 'eq', 0);
+
+        // Secret.
+        $mform->addElement('passwordunmask', 's3_secret', get_string('s3_secret', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_secret', PARAM_TEXT);
+        $mform->hideIf('s3_secret', 'uses3', 'eq', 0);
+
+        // Bucket.
+        $mform->addElement('text', 's3_bucket', get_string('s3_bucket', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_bucket', PARAM_TEXT);
+        $mform->hideIf('s3_bucket', 'uses3', 'eq', 0);
+
+        // Region.
+        $mform->addElement('text', 's3_region', get_string('s3_region', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_region', PARAM_TEXT);
+        $mform->hideIf('s3_region', 'uses3', 'eq', 0);
+
+        // Use proxy.
+        $mform->addElement('advcheckbox', 's3_useproxy',
+            get_string('s3_useproxy', 'tool_lcbackupcoursestep'), get_string('enable'));
+        $mform->setType('s3_useproxy', PARAM_BOOL);
+        $mform->hideIf('s3_useproxy', 'uses3', 'eq', 0);
+    }
+
+    /**
+     * Validates the instance settings.
+     *
+     *
+     * @param array $error Array containing all errors.
+     * @param array $data Data passed from the moodle form to be validated.
+     * @return array
+     */
+    public function extend_add_instance_form_validation(&$error, $data) {
+        parent::extend_add_instance_form_validation($error, $data);
+
+        // Check if S3 is enabled.
+        if (!empty($data['uses3'])) {
+            if (empty($data['s3_usesdkcreds'])) {
+                // Check if the key is empty.
+                if (empty($data['s3_key'])) {
+                    $error['s3_key'] = get_string('required');
+                }
+
+                // Check if the secret is empty.
+                if (empty($data['s3_secret'])) {
+                    $error['s3_secret'] = get_string('required');
+                }
+            }
+
+            // Check if the bucket is empty.
+            if (empty($data['s3_bucket'])) {
+                $error['s3_bucket'] = get_string('required');
+            }
+
+            // Check if the region is empty.
+            if (empty($data['s3_region'])) {
+                $error['s3_region'] = get_string('required');
+            }
+
+            // Check connection if there is no error.
+            if (empty($error)) {
+                $connection = helper::check_connection($data);
+                if (!$connection->success) {
+                    // We already show error on s3_status field, so no need to show it here.
+                    $error['s3_status'] = '';
+                }
+            }
+        }
+
+        return $error;
+    }
+
+    /**
+     * This method can be overriden, to set default values to the form_step_instance.
+     * It is called in definition_after_data().
+     * @param \MoodleQuickForm $mform
+     * @param array $settings array containing the settings from the db.
+     */
+    public function extend_add_instance_form_definition_after_data($mform, $settings) {
+        global $OUTPUT;
+        if (!empty($settings['uses3'])) {
+            $data = $mform->exportValues();
+            $connection = helper::check_connection($data);
+            if (!$connection->success) {
+                $message = $OUTPUT->notification(get_string('s3_connection_error', 'tool_lcbackupcoursestep', $connection->details),
+                    notification::NOTIFY_ERROR);
+                $mform->setDefault('s3_status', $message);
+            } else {
+                $message = $OUTPUT->notification(get_string('s3_connection_success', 'tool_lcbackupcoursestep'),
+                    notification::NOTIFY_SUCCESS);
+                $mform->setDefault('s3_status', $message);
+            }
+        }
     }
 
     /**
