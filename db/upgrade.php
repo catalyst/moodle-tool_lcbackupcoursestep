@@ -147,6 +147,26 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
         if ($dbman->table_exists($table)) {
             $dbman->rename_table($table, 'tool_lcbackupcoursestep_meta');
         }
+
+        // Extra step mandatory due to the state of the plugin before this upgrade, with 2 branch having different functionality.
+        $table = new xmldb_table('tool_lcbackupcoursestep_s3');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('processid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('instanceid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('filename', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);
+        $table->add_field('contenthash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('bucketname', XMLDB_TYPE_CHAR, '512', null, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('processid_idx', XMLDB_INDEX_NOTUNIQUE, ['processid']);
+        $table->add_index('courseid_idx', XMLDB_INDEX_NOTUNIQUE, ['courseid']);
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
         upgrade_plugin_savepoint(true, 2025021900, 'tool', 'lcbackupcoursestep');
     }
 
