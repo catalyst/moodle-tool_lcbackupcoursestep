@@ -5,6 +5,12 @@ Installation
 ============
 This is an admin plugin and should go into ``admin/tool/lcbackupcoursestep``.
 
+Branches
+============
+| Moodle version | Branch            |
+|----------------|-------------------|
+| Moodle 4.1+    | MOODLE_401_STABLE |
+
 Dependencies
 ============
 This plugin depends on the following plugins:
