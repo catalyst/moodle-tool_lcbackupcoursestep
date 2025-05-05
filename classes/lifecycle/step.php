@@ -145,14 +145,6 @@ class step extends libbase {
             // Upload file to S3.
             helper::upload_file($processid, $instanceid, $courseid, $newfile);
 
-            $DB->insert_record('tool_lcbackupcoursestep_meta', [
-                'shortname' => $course->shortname,
-                'fullname' => $course->fullname,
-                'oldcourseid' => $course->id,
-                'fileid' => $newfile->get_id(),
-                'timecreated' => time(),
-            ]);
-
             // Delete file.
             $file->delete();
         }
