@@ -249,7 +249,7 @@ class step_test extends \advanced_testcase {
         $processor->process_courses();
 
         // Get the file record.
-        $contextid = \context_course::instance($this->course->id)->id;
+        $contextid = \context_system::instance()->id;
         $sql = "contextid = :contextid
                AND component = :component
                AND filearea = :filearea
