@@ -139,15 +139,9 @@ class step_test extends \advanced_testcase {
         process_manager::manually_trigger_process($this->course->id, $this->trigger->id);
 
         $this->expectOutputString(
-            // First process_courses.
-            "Adhoc course backup task for the course " . $this->course->id . " has been created\n" .
-            // Second process_courses.
-            "Adhoc course backup task for the course " . $this->course->id . " is still running, waiting.\n" .
             // Adhoc task output.
             "Processing backup for course: Test course 1\n" .
-            "Backup and s3 adhoc task for: Test course 1 completed.\n" .
-            // Final output.
-            "Adhoc course backup task for the course " . $this->course->id . " has finished, proceeding to next step.\n"
+            "Backup and s3 adhoc task for: Test course 1 completed.\n"
         );
 
         // Run processor.
@@ -271,7 +265,7 @@ class step_test extends \advanced_testcase {
 
         // Run adhoc tasks.
         $this->expectOutputString(
-            "Adhoc course backup task for the course " . $this->course->id . " has been created\n" .
+        // Adhoc task output.
             "Processing backup for course: Test course 1\n" .
             "Backup and s3 adhoc task for: Test course 1 completed.\n"
         );

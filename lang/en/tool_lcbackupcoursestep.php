@@ -29,6 +29,7 @@ $string['adhocbackupstasks'] = 'Pending adhoc tasks for course backup';
 $string['adhocbackupstasksdescription'] = 'This page show a list of adhoc tasks that are waiting to be processed. You can also delete any failed task if required.';
 $string['backedupcourses'] = 'List of backed up courses (tool_lcbackupcoursestep)';
 $string['backupsettings'] = 'Backup settings';
+$string['confirmdeletetask'] = 'Are you sure you want to delete this task?';
 $string['course_id_header'] = 'Course ID';
 $string['course_shortname_header'] = 'Course short name';
 $string['course_fullname_header'] = 'Course full name';

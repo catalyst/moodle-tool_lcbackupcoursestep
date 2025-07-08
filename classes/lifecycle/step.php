@@ -74,21 +74,18 @@ class step extends libbase {
         $workflowid = $DB->get_field('tool_lifecycle_process', 'workflowid', ['id' => $processid]);
 
         // Set the custom data.
-        $tashhash = md5($processid . '_' . $instanceid . '_' . $course->id);
+        $taskhash = $this->generate_task_hash($processid, $instanceid, $course);
         $task->set_custom_data((object) [
             'processid' => $processid,
             'stepinstanceid' => $instanceid,
             'courseid' => $course->id,
             'workflowid' => $workflowid,
-            'taskhash' => $tashhash,
+            'taskhash' => $taskhash,
         ]);
 
         // Schedule to run the task after 1 minute.
         $task->set_next_run_time(time() + 60);
         \core\task\manager::queue_adhoc_task($task, true);
-
-        // Log the task creation.
-        mtrace("Adhoc course backup task for the course " . $course->id . " has been created");
 
         // Important, We need to put this to waiting state, so next step has to wait.
         return step_response::waiting();
@@ -105,10 +102,8 @@ class step extends libbase {
     public function process_waiting_course($processid, $instanceid, $course) {
         if ($this->get_adhoc_task($processid, $instanceid, $course)) {
             // Keep waiting for the adhoc task to finish.
-            mtrace("Adhoc course backup task for the course " . $course->id . " is still running, waiting.");
             return step_response::waiting();
         } else {
-            mtrace("Adhoc course backup task for the course " . $course->id . " has finished, proceeding to next step.");
             // Task is finished, proceed to next step.
             return step_response::proceed();
         }
@@ -145,11 +140,11 @@ class step extends libbase {
     private function get_adhoc_task($processid, $instanceid, $course) {
         global $DB;
         // Find adhoc task using hash value.
-        $tashhash = md5($processid . '_' . $instanceid . '_' . $course->id);
+        $taskhash = $this->generate_task_hash($processid, $instanceid, $course);
         $select = $DB->sql_like('customdata', ':taskhash');
         $select  .= ' AND component = :component';
         $params = [
-            'taskhash' => '%' . $tashhash . '%',
+            'taskhash' => '%' . $taskhash . '%',
             'component' => 'tool_lcbackupcoursestep',
         ];
         return $DB->get_record_select('task_adhoc', $select, $params);
@@ -437,5 +432,17 @@ class step extends libbase {
         $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_tasks',
             get_string('adhoc_tasks', 'tool_lcbackupcoursestep'),
             new moodle_url('/admin/tool/lcbackupcoursestep/tasks.php')));
+    }
+
+    /**
+     * Generate a unique hash for a process, instance, and course.
+     *
+     * @param int $processid
+     * @param int $instanceid
+     * @param object $course
+     * @return string
+     */
+    private function generate_task_hash($processid, $instanceid, $course) {
+        return md5($processid . '_' . $instanceid . '_' . $course->id);
     }
 }

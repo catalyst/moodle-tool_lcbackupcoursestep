@@ -39,13 +39,6 @@ $PAGE->set_url(new \moodle_url('/admin/tool/lcbackupcoursestep/tasks.php'));
 $PAGE->set_title(get_string('adhocbackupstasks', 'tool_lcbackupcoursestep'));
 $PAGE->set_heading(get_string('adhocbackupstasks', 'tool_lcbackupcoursestep'));
 
-echo $OUTPUT->header();
-
-// Description of the page in an info box.
-echo $OUTPUT->box_start('generalbox boxaligncenter', 'description');
-echo $OUTPUT->box(get_string('adhocbackupstasksdescription', 'tool_lcbackupcoursestep'), 'description');
-echo $OUTPUT->box_end();
-
 $action = optional_param('action', '', PARAM_ALPHA);
 if (!empty($action)) {
     global $DB;
@@ -59,6 +52,24 @@ if (!empty($action)) {
     $returnurl = new \moodle_url('/admin/tool/lcbackupcoursestep/tasks.php');
 
     if ($action === 'delete') {
+        $confirm = optional_param('confirm', 0, PARAM_INT);
+
+        if (!$confirm) {
+            $message = get_string('confirmdeletetask', 'tool_lcbackupcoursestep');
+            $yesurl = new \moodle_url($PAGE->url, [
+                'action' => 'delete',
+                'id' => $id,
+                'processid' => $processid,
+                'workflowid' => $workflowid,
+                'sesskey' => sesskey(),
+                'confirm' => 1,
+            ]);
+            echo $OUTPUT->header();
+            echo $OUTPUT->confirm($message, $yesurl, $returnurl);
+            echo $OUTPUT->footer();
+            exit();
+        }
+
         // Check if the process still exists.
         $process = process_manager::get_process_by_id($processid);
         if ($process) {
@@ -70,6 +81,13 @@ if (!empty($action)) {
     }
     redirect($returnurl);
 }
+
+echo $OUTPUT->header();
+
+// Description of the page in an info box.
+echo $OUTPUT->box_start('generalbox boxaligncenter', 'description');
+echo $OUTPUT->box(get_string('adhocbackupstasksdescription', 'tool_lcbackupcoursestep'), 'description');
+echo $OUTPUT->box_end();
 
 // Show adhoc task table.
 $tasktable = new adhoc_task_table();
