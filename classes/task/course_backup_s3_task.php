@@ -67,25 +67,14 @@ class course_backup_s3_task extends \core\task\adhoc_task {
             return;
         }
 
-        // Check if the backup task is already running on the same course.
-        $lockfactory = \core\lock\lock_config::get_lock_factory('course_backup_adhoc');
-        if (!$lock = $lockfactory->get_lock('tool_lcbackupcoursestep_adhoc_task_' . $courseid, 10)) {
-            mtrace('Backup adhoc task for: ' . $course->fullname . ' is already running.');
-            return;
-        } else {
-            mtrace('Processing backup for course: ' . $course->fullname);
-        }
-
         // Process course.
         try {
+            mtrace('Processing backup for course: ' . $course->fullname);
             $this->process_course($processid, $stepinstanceid, $course);
         } catch (\Exception $e) {
             mtrace('Error processing course: ' . $course->fullname . ', ' . $e->getMessage());
-        } finally {
-            // Release lock.
-            $lock->release();
-            mtrace('Backup and s3 adhoc task for: ' . $course->fullname . ' completed.');
         }
+        mtrace('Backup and s3 adhoc task for: ' . $course->fullname . ' completed.');
     }
 
     /**
