@@ -16,6 +16,7 @@
 
 namespace tool_lcbackupcoursestep\task;
 
+use backup_controller;
 use backup_plan_dbops;
 use tool_lcbackupcoursestep\s3\helper;
 use tool_lifecycle\settings_type;
@@ -93,7 +94,7 @@ class course_backup_s3_task extends \core\task\adhoc_task {
         $settings = settings_manager::get_settings($instanceid, settings_type::STEP);
 
         // Backup course.
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $courseid, \backup::FORMAT_MOODLE,
+        $bc = new backup_controller(\backup::TYPE_1COURSE, $courseid, \backup::FORMAT_MOODLE,
             \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, get_admin()->id);
 
         // Settings.
