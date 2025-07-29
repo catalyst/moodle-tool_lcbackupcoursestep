@@ -30,11 +30,13 @@ global $CFG;
 require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
 
 use admin_externalpage;
+use backup_plan_dbops;
 use core\output\notification;
 use moodle_url;
 use tool_lcbackupcoursestep\s3\helper;
-use tool_lcbackupcoursestep\task\course_backup_s3_task;
+use tool_lifecycle\local\manager\settings_manager;
 use tool_lifecycle\local\response\step_response;
+use tool_lifecycle\settings_type;
 use tool_lifecycle\step\instance_setting;
 use tool_lifecycle\step\libbase;
 
@@ -55,17 +57,18 @@ class step extends libbase {
         return 'tool_lcbackupcoursestep';
     }
 
+
     /**
      * Returns the description.
      *
      * @return string
      */
     public function get_plugin_description() {
-        return get_string('description', 'tool_lcbackupcoursestep');
+        return "Backup course";
     }
 
     /**
-     * Adhoc task to back up the course.
+     * Processes the course.
      *
      * @param int $processid the process id.
      * @param int $instanceid step instance id.
@@ -75,87 +78,82 @@ class step extends libbase {
     public function process_course($processid, $instanceid, $course) {
         global $DB;
 
-        // Create and queue adhoc task.
-        $task = new \tool_lcbackupcoursestep\task\course_backup_s3_task();
+        $courseid = $course->id;
 
-        // Retrieve workflow id to save in custom data.
-        $workflowid = $DB->get_field('tool_lifecycle_process', 'workflowid', ['id' => $processid]);
+        // Get backup settings.
+        $settings = settings_manager::get_settings($instanceid, settings_type::STEP);
 
-        // Set the custom data.
-        $taskhash = $this->generate_task_hash($processid, $instanceid, $course);
-        $task->set_custom_data((object) [
-            'processid' => $processid,
-            'stepinstanceid' => $instanceid,
-            'courseid' => $course->id,
-            'workflowid' => $workflowid,
-            'taskhash' => $taskhash,
-        ]);
+        // Backup course.
+        $bc = new \backup_controller(\backup::TYPE_1COURSE, $courseid, \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, get_admin()->id);
 
-        // Schedule to run the task after 1 minute.
-        $task->set_next_run_time(time() + 60);
-        \core\task\manager::queue_adhoc_task($task, true);
+        // Settings.
+        $backupplan = $bc->get_plan();
+        $keyprefix = "backup_";
+        foreach ($settings as $key => $value) {
+            // The keys are prefixed with backup_, check then remove.
+            if (strpos($key, $keyprefix) !== 0) {
+                continue;
+            }
 
-        // Important, We need to put this to waiting state, so next step has to wait.
-        return step_response::waiting();
-    }
+            $key = substr($key, strlen($keyprefix));
+            $setting = $backupplan->get_setting($key);
 
-    /**
-     * Only proceed if the course backup task has finished.
-     *
-     * @param int $processid
-     * @param int $instanceid
-     * @param mixed $course
-     * @return step_response
-     */
-    public function process_waiting_course($processid, $instanceid, $course) {
-        if ($this->get_adhoc_task($processid, $instanceid, $course)) {
-            // Keep waiting for the adhoc task to finish.
-            return step_response::waiting();
-        } else {
-            // Task is finished, proceed to next step.
-            return step_response::proceed();
+            if ($setting->get_status() === \base_setting::NOT_LOCKED) {
+                $setting->set_value($value);
+            }
         }
-    }
 
-    /**
-     * Rollback the step.
-     * We only delete the adhoc task if it exists
-     *
-     * @param int $processid of the respective process.
-     * @param int $instanceid of the step instance.
-     * @param mixed $course to be rolled back.
-     */
-    public function rollback_course($processid, $instanceid, $course) {
-        global $DB;
+        // Set the default filename.
+        $format = $bc->get_format();
+        $type = $bc->get_type();
+        $id = $bc->get_id();
+        $users = $bc->get_plan()->get_setting('users')->get_value();
+        $anonymised = $bc->get_plan()->get_setting('anonymize')->get_value();
+        $filename = backup_plan_dbops::get_default_backup_filename($format, $type, $id, $users, $anonymised);
+        $backupplan->get_setting('filename')->set_value($filename);
 
-        // Find the adhoc task.
-        $task = $this->get_adhoc_task($processid, $instanceid, $course);
-        if ($task) {
-            // Delete the adhoc task.
-            $DB->delete_records('task_adhoc', ['id' => $task->id]);
+        // Run backup.
+        $bc->execute_plan();
+        $results = $bc->get_results();
+
+        // Copy backup file.
+        $file = $results['backup_destination'];
+        if (!empty($file)) {
+            // Prepare file record.
+            $filerecord = [
+                'contextid' => \context_system::instance()->id,
+                'component' => 'tool_lcbackupcoursestep',
+                'filearea' => 'course_backup',
+                'itemid' => $instanceid,
+                'filepath' => "/",
+                'filename' => $filename,
+            ];
+
+            // Save file.
+            $fs = get_file_storage();
+            $newfile = $fs->create_file_from_storedfile($filerecord, $file);
+
+            $DB->insert_record('tool_lcbackupcoursestep_meta', [
+                'shortname' => $course->shortname,
+                'fullname' => $course->fullname,
+                'oldcourseid' => $course->id,
+                'fileid' => $newfile->get_id(),
+                'timecreated' => time(),
+            ]);
+
+            // Upload file to S3.
+            helper::upload_file($processid, $instanceid, $courseid, $newfile);
+
+            // Delete file.
+            $file->delete();
         }
-    }
 
-    /**
-     * Find adhoc task
-     *
-     * @param int $processid the process id.
-     * @param int $instanceid step instance id.
-     * @param object $course the course object.
-     *
-     * @return \stdClass|false if the task exists.
-     */
-    private function get_adhoc_task($processid, $instanceid, $course) {
-        global $DB;
-        // Find adhoc task using hash value.
-        $taskhash = $this->generate_task_hash($processid, $instanceid, $course);
-        $select = $DB->sql_like('customdata', ':taskhash');
-        $select  .= ' AND component = :component';
-        $params = [
-            'taskhash' => '%' . $taskhash . '%',
-            'component' => 'tool_lcbackupcoursestep',
-        ];
-        return $DB->get_record_select('task_adhoc', $select, $params);
+        // Clean up.
+        $bc->destroy();
+        unset($bc);
+
+        return step_response::proceed();
     }
 
     /**
@@ -436,27 +434,9 @@ class step extends libbase {
      */
     public function get_plugin_settings() {
         global $ADMIN;
-
         // Page to show the list of backed up courses.
         $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_courses',
             get_string('backedupcourses', 'tool_lcbackupcoursestep'),
             new moodle_url('/admin/tool/lcbackupcoursestep/courses.php')));
-
-        // Page to show the list of adhoc tasks.
-        $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_tasks',
-            get_string('adhoc_tasks', 'tool_lcbackupcoursestep'),
-            new moodle_url('/admin/tool/lcbackupcoursestep/tasks.php')));
-    }
-
-    /**
-     * Generate a unique hash for a process, instance, and course.
-     *
-     * @param int $processid
-     * @param int $instanceid
-     * @param object $course
-     * @return string
-     */
-    private function generate_task_hash($processid, $instanceid, $course) {
-        return md5($processid . '_' . $instanceid . '_' . $course->id);
     }
 }

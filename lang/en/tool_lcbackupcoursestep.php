@@ -22,26 +22,17 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['pluginname'] = 'Adhoc course backup step';
+$string['pluginname'] = 'Backup course step';
 $string['privacy:metadata'] = 'The plugin does not store any personal data.';
-$string['adhoc_tasks'] = 'Adhoc tasks for course backup (tool_lcbackupcoursestep)';
-$string['adhocbackupstasks'] = 'Pending adhoc tasks for course backup';
-$string['adhocbackupstasksdescription'] = 'This page show a list of adhoc tasks that are waiting to be processed. You can also delete any failed task if required.';
-$string['backedupcourses'] = 'List of backed up courses (tool_lcbackupcoursestep)';
+$string['backedupcourses'] = 'Backed up courses';
 $string['backupsettings'] = 'Backup settings';
-$string['confirmdeletetask'] = 'Are you sure you want to delete this task?';
 $string['course_id_header'] = 'Course ID';
 $string['course_shortname_header'] = 'Course short name';
-$string['course_fullname_header'] = 'Course full name';
-$string['description'] = 'Backup courses using adhoc tasks.';
+$string['course_fullname_header'] = 'Course fullname name';
 $string['filename_header'] = 'File name';
 $string['filesize_header'] = 'File size';
 $string['createdat_header'] = 'Created at';
-$string['faildelay_header'] = 'Fail delay';
 $string['actions_header'] = 'Actions';
-$string['missing_course'] = 'Missing course';
-$string['missing_workflow'] = 'Missing workflow';
-$string['next_run_header'] = 'Next run time';
 $string['s3_bucket'] = 'Bucket';
 $string['s3_connection_error'] = 'Connection error: {$a}';
 $string['s3_connection_success'] = 'Connection successful';
@@ -52,6 +43,5 @@ $string['s3_unmet_dependency'] = 'This Amazon S3 feature is optional and require
 $string['s3_useproxy'] = 'Use proxy';
 $string['s3_usesdkcreds'] = 'Use the default credential provider chain to find AWS credentials';
 $string['s3settings'] = 'Amazon S3 settings';
-$string['taskfailed'] = 'Adhoc task failed';
 $string['uses3'] = 'Push backups to Amazon S3 bucket';
-$string['workflow_header'] = 'Workflow';
+
