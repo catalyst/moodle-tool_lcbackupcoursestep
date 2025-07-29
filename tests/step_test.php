@@ -138,9 +138,28 @@ class step_test extends \advanced_testcase {
         // Run trigger.
         process_manager::manually_trigger_process($this->course->id, $this->trigger->id);
 
+        $this->expectOutputString(
+            // Adhoc task output.
+            "Processing backup for course: Test course 1\n" .
+            "Backup and s3 adhoc task for: Test course 1 completed.\n"
+        );
+
         // Run processor.
         $processor = new processor();
         $processor->process_courses();
+
+        // Run processor again to process the course. This should keep the process in waiting state.
+        $processor->process_courses();
+        $process = $DB->get_record('tool_lifecycle_process', ['courseid' => $this->course->id, 'waiting' => 1]);
+        $this->assertNotEmpty($process);
+
+        // Run adhoc tasks.
+        $this->runAdhocTasks('\tool_lcbackupcoursestep\task\course_backup_s3_task');
+
+        // There should be no process.
+        $processor->process_courses();
+        $process = $DB->get_record('tool_lifecycle_process', ['courseid' => $this->course->id]);
+        $this->assertEmpty($process, 'There should be no process for the course.');
 
         // Check that the log file is created.
         $contextid = \context_system::instance()->id;
@@ -247,6 +266,18 @@ class step_test extends \advanced_testcase {
         // Run processor.
         $processor = new processor();
         $processor->process_courses();
+
+        // Makre sure the processor still exists and in waiting state.
+        $process = $DB->get_record('tool_lifecycle_process', ['courseid' => $this->course->id, 'waiting' => 1]);
+        $this->assertNotEmpty($process);
+
+        // Run adhoc tasks.
+        $this->expectOutputString(
+        // Adhoc task output.
+            "Processing backup for course: Test course 1\n" .
+            "Backup and s3 adhoc task for: Test course 1 completed.\n"
+        );
+        $this->runAdhocTasks('\tool_lcbackupcoursestep\task\course_backup_s3_task');
 
         // Get the file record.
         $contextid = \context_system::instance()->id;

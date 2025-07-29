@@ -21,7 +21,6 @@
  * @copyright   2024 Catalyst IT
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 use tool_lcbackupcoursestep\lifecycle\course_table;
 
 require_once(__DIR__ . '/../../../config.php');
@@ -99,7 +98,7 @@ if ($mform->is_cancelled()) {
 echo $OUTPUT->header();
 $mform->display();
 
-// Show log table.
+// Show backed up courses.
 $table = new course_table($data);
 $table->define_baseurl($PAGE->url);
 $table->out(100, false);

@@ -126,7 +126,7 @@ class helper {
         $settings = settings_manager::get_settings($instanceid, settings_type::STEP);
 
         // Do nothing if s3 is not enabled.
-        if (!$settings['uses3']) {
+        if (empty($settings['uses3'])) {
             return;
         }
 
