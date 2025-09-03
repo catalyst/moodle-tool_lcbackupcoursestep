@@ -16,6 +16,9 @@
 
 namespace tool_lcbackupcoursestep\task;
 
+defined('MOODLE_INTERNAL') || die();
+require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
+
 use backup_controller;
 use backup_plan_dbops;
 use tool_lcbackupcoursestep\s3\helper;
