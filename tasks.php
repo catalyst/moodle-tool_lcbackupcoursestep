@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 /**
  * Displays adhoc tasks for course backup.
  *
@@ -26,9 +25,9 @@
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
-use \tool_lcbackupcoursestep\lifecycle\adhoc_task_table;
-use \tool_lifecycle\local\manager\delayed_courses_manager;
-use \tool_lifecycle\local\manager\process_manager;
+use tool_lcbackupcoursestep\lifecycle\adhoc_task_table;
+use tool_lifecycle\local\manager\delayed_courses_manager;
+use tool_lifecycle\local\manager\process_manager;
 
 require_login();
 require_capability('moodle/site:config', context_system::instance());
