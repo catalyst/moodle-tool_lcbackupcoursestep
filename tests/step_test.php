@@ -68,7 +68,9 @@ class step_test extends \advanced_testcase {
      * Set up the test.
      */
     public function setUp(): void {
-        global $USER, $CFG;
+        global $USER;
+
+        parent::setUp();
 
         // We do not need a sesskey check in these tests.
         $USER->ignoresesskey = true;
