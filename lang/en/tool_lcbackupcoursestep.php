@@ -23,6 +23,7 @@
  */
 
 $string['pluginname'] = 'Adhoc course backup step';
+$string['plugindescription'] = 'Backup courses using adhoc tasks.';
 $string['privacy:metadata'] = 'The plugin does not store any personal data.';
 $string['adhoc_tasks'] = 'Adhoc tasks for course backup (tool_lcbackupcoursestep)';
 $string['adhocbackupstasks'] = 'Pending adhoc tasks for course backup';
@@ -33,7 +34,6 @@ $string['confirmdeletetask'] = 'Are you sure you want to delete this task?';
 $string['course_id_header'] = 'Course ID';
 $string['course_shortname_header'] = 'Course short name';
 $string['course_fullname_header'] = 'Course full name';
-$string['description'] = 'Backup courses using adhoc tasks.';
 $string['filename_header'] = 'File name';
 $string['filesize_header'] = 'File size';
 $string['createdat_header'] = 'Created at';
