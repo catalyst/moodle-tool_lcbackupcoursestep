@@ -18,6 +18,7 @@ namespace tool_lcbackupcoursestep\s3;
 
 use Aws\MockHandler;
 use Aws\Result;
+use Aws\S3\ObjectUploader;
 use stdClass;
 use stored_file;
 use tool_lifecycle\local\manager\settings_manager;
@@ -44,6 +45,51 @@ class helper {
         }
         require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
         return true;
+    }
+
+    /**
+     * Return S3 region options formatted for a select element.
+     *
+     * @return array
+     */
+    public static function get_s3_region_options(): array {
+        global $CFG;
+
+        $path = $CFG->dirroot . '/local/aws/sdk/Aws/data/endpoints.json.php';
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        $api = require($path);
+        $ends = $api['partitions'][0]['regions'] ?? [];
+        $options = [];
+        foreach ($ends as $key => $value) {
+            $options[$key] = $key . ' - ' . ($value['description'] ?? '');
+        }
+
+        return $options;
+    }
+
+    /**
+     * Return supported S3 ACL options formatted for a select element.
+     *
+     * @return array
+     */
+    public static function get_s3_acl_options(): array {
+        global $CFG;
+
+        $path = $CFG->dirroot . '/local/aws/sdk/Aws/data/s3/2006-03-01/api-2.json.php';
+        if (!file_exists($path)) {
+            return [];
+        }
+
+        $api = require($path);
+        $acls = $api['shapes']['ObjectCannedACL']['enum'] ?? [];
+        $options = [];
+        foreach ($acls as $value) {
+            $options[$value] = $value;
+        }
+        return $options;
     }
 
     /**
@@ -137,13 +183,27 @@ class helper {
             throw new \moodle_exception('s3_connection_error', 'tool_lcbackupcoursestep', '', $connection->details);
         }
 
+        // Open file handle directly from stored_file.
+        $filehandle = $file->get_content_file_handle();
+
+        $acl = $settings['s3_acl'] ?? 'private';
+
         // Upload file.
         $client = self::create_client($settings);
-        $client->putObject([
-            'Bucket' => $settings['s3_bucket'],
-            'Key' => $file->get_filename(),
-            'Body' => $file->get_content_file_handle(),
-        ]);
+        $uploader = new ObjectUploader(
+            $client,
+            $settings['s3_bucket'],
+            $settings['s3_key_prefix'] . $file->get_filename(),
+            $filehandle,
+            $acl,
+            [
+                'params' => [
+                    'ContentType' => $file->get_mimetype(),
+                ],
+            ]
+        );
+        $uploader->upload();
+        fclose($filehandle);
 
         // Save backed up file details.
         $filedetails = new stdClass();
