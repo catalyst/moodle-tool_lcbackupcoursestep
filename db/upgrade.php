@@ -60,7 +60,6 @@ function xmldb_tool_lcbackupcoursestep_upgrade($oldversion) {
     }
 
     if ($oldversion < 2023100402) {
-
         // Define field bucketname to be added to tool_lcbackupcoursestep_s3.
         $table = new xmldb_table('tool_lcbackupcoursestep_s3');
 

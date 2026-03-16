@@ -28,7 +28,6 @@ require_once($CFG->libdir . '/tablelib.php');
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class course_table extends \table_sql {
-
     /**
      * @var array "cached" lang strings
      */
