@@ -32,7 +32,6 @@ use tool_lifecycle\settings_type;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class helper {
-
     /**
      * Check if local/aws plugin installed.
      *
@@ -216,5 +215,4 @@ class helper {
         $filedetails->timecreated = time();
         $DB->insert_record('tool_lcbackupcoursestep_s3', $filedetails);
     }
-
 }
