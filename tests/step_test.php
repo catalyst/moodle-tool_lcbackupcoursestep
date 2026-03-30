@@ -86,7 +86,10 @@ class step_test extends \advanced_testcase {
 
         // Step.
         $this->step = $generator->create_step("instance1", "tool_lcbackupcoursestep", $manualworkflow->id);
-        settings_manager::save_settings($this->step->id, settings_type::STEP, "tool_lcbackupcoursestep",
+        settings_manager::save_settings(
+            $this->step->id,
+            settings_type::STEP,
+            "tool_lcbackupcoursestep",
             [
                 "backup_users" => true,
                 "backup_anonymize" => false,
@@ -174,8 +177,7 @@ class step_test extends \advanced_testcase {
                 'filearea' => 'course_backup',
                 'filepath' => '/',
                 'filename' => '.',
-            ]
-        );
+            ]);
 
         // File existence.
         $this->assertNotEmpty($file);
@@ -198,16 +200,25 @@ class step_test extends \advanced_testcase {
         $storedfile->extract_to_pathname(get_file_packer('application/vnd.moodle.backup'), $path);
 
         // Restore course.
-        list($fullname, $shortname) = restore_dbops::calculate_course_names(0, get_string('restoringcourse', 'backup'),
-            get_string('restoringcourseshortname', 'backup'));
+        [$fullname, $shortname] = restore_dbops::calculate_course_names(
+            0,
+            get_string('restoringcourse', 'backup'),
+            get_string('restoringcourseshortname', 'backup')
+        );
 
         // A category to restore to.
         $category = $this->getDataGenerator()->create_category();
         $courseid = restore_dbops::create_new_course($fullname, $shortname, $category->id);
 
         // Run the restoration.
-        $rc = new restore_controller($backupdir, $courseid, backup::INTERACTIVE_NO,
-            backup::MODE_GENERAL, get_admin()->id, backup::TARGET_NEW_COURSE);
+        $rc = new restore_controller(
+            $backupdir,
+            $courseid,
+            backup::INTERACTIVE_NO,
+            backup::MODE_GENERAL,
+            get_admin()->id,
+            backup::TARGET_NEW_COURSE
+        );
         $rc->execute_precheck();
         $rc->execute_plan();
         $rc->destroy();
@@ -241,7 +252,10 @@ class step_test extends \advanced_testcase {
             $this->markTestSkipped('AWS SDK is not installed.');
         }
 
-        settings_manager::save_settings($this->step->id, settings_type::STEP, "tool_lcbackupcoursestep",
+        settings_manager::save_settings(
+            $this->step->id,
+            settings_type::STEP,
+            "tool_lcbackupcoursestep",
             [
                 'uses3' => true,
                 's3_bucket' => 'testbucket',
@@ -284,8 +298,7 @@ class step_test extends \advanced_testcase {
                 'filearea' => 'course_backup',
                 'filepath' => '/',
                 'filename' => '.',
-            ]
-        );
+            ]);
         $this->assertNotEmpty($file);
 
         // Check file record is saved.
