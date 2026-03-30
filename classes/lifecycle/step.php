@@ -200,7 +200,9 @@ class step extends libbase {
             new instance_setting('s3_key', PARAM_TEXT, true),
             new instance_setting('s3_secret', PARAM_TEXT, true),
             new instance_setting('s3_bucket', PARAM_TEXT, true),
+            new instance_setting('s3_key_prefix', PARAM_TEXT, true),
             new instance_setting('s3_region', PARAM_TEXT, true),
+            new instance_setting('s3_acl', PARAM_TEXT, true),
             new instance_setting('s3_useproxy', PARAM_BOOL, true),
         ];
     }
@@ -314,10 +316,11 @@ class step extends libbase {
         if (helper::met_dependency()) {
             $this->add_amazon_s3_settings($mform);
         } else {
-            $mform->addElement('html', $OUTPUT->notification(get_string('s3_unmet_dependency', 'tool_lcbackupcoursestep'),
-                notification::NOTIFY_WARNING));
+            $mform->addElement('html', $OUTPUT->notification(
+                get_string('s3_unmet_dependency', 'tool_lcbackupcoursestep'),
+                notification::NOTIFY_WARNING
+            ));
         }
-
     }
 
     /**
@@ -327,16 +330,24 @@ class step extends libbase {
      */
     private function add_amazon_s3_settings($mform) {
         // Check box to enable S3.
-        $mform->addElement('advcheckbox', 'uses3',
-            get_string('uses3', 'tool_lcbackupcoursestep'), get_string('enable'));
+        $mform->addElement(
+            'advcheckbox',
+            'uses3',
+            get_string('uses3', 'tool_lcbackupcoursestep'),
+            get_string('enable')
+        );
         $mform->setType('uses3', PARAM_BOOL);
 
         // Status.
         $mform->addElement('static', 's3_status');
 
         // Use default credential provider chain to find aws credentials.
-        $mform->addElement('advcheckbox', 's3_usesdkcreds',
-            get_string('s3_usesdkcreds', 'tool_lcbackupcoursestep'), get_string('enable'));
+        $mform->addElement(
+            'advcheckbox',
+            's3_usesdkcreds',
+            get_string('s3_usesdkcreds', 'tool_lcbackupcoursestep'),
+            get_string('enable')
+        );
         $mform->setType('s3_usesdkcreds', PARAM_BOOL);
         $mform->hideIf('s3_usesdkcreds', 'uses3', 'eq', 0);
 
@@ -355,14 +366,39 @@ class step extends libbase {
         $mform->setType('s3_bucket', PARAM_TEXT);
         $mform->hideIf('s3_bucket', 'uses3', 'eq', 0);
 
+        // ACL.
+        $mform->addElement(
+            'select',
+            's3_acl',
+            get_string('s3_acl', 'tool_lcbackupcoursestep'),
+            helper::get_s3_acl_options()
+        );
+        $mform->setType('s3_acl', PARAM_TEXT);
+        $mform->setDefault('s3_acl', 'private');
+        $mform->hideIf('s3_acl', 'uses3', 'eq', 0);
+
+        // Key prefix.
+        $mform->addElement('text', 's3_key_prefix', get_string('s3_key_prefix', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_key_prefix', PARAM_TEXT);
+        $mform->hideIf('s3_key_prefix', 'uses3', 'eq', 0);
+
         // Region.
-        $mform->addElement('text', 's3_region', get_string('s3_region', 'tool_lcbackupcoursestep'));
+        $mform->addElement(
+            'select',
+            's3_region',
+            get_string('s3_region', 'tool_lcbackupcoursestep'),
+            helper::get_s3_region_options()
+        );
         $mform->setType('s3_region', PARAM_TEXT);
         $mform->hideIf('s3_region', 'uses3', 'eq', 0);
 
         // Use proxy.
-        $mform->addElement('advcheckbox', 's3_useproxy',
-            get_string('s3_useproxy', 'tool_lcbackupcoursestep'), get_string('enable'));
+        $mform->addElement(
+            'advcheckbox',
+            's3_useproxy',
+            get_string('s3_useproxy', 'tool_lcbackupcoursestep'),
+            get_string('enable')
+        );
         $mform->setType('s3_useproxy', PARAM_BOOL);
         $mform->hideIf('s3_useproxy', 'uses3', 'eq', 0);
     }
@@ -402,6 +438,12 @@ class step extends libbase {
                 $error['s3_region'] = get_string('required');
             }
 
+            // Check if ACL is valid.
+            $acls = helper::get_s3_acl_options();
+            if (empty($data['s3_acl']) || !array_key_exists($data['s3_acl'], $acls)) {
+                $error['s3_acl'] = get_string('required');
+            }
+
             // Check connection if there is no error.
             if (empty($error)) {
                 $connection = helper::check_connection($data);
@@ -427,12 +469,16 @@ class step extends libbase {
             $data = $mform->exportValues();
             $connection = helper::check_connection($data);
             if (!$connection->success) {
-                $message = $OUTPUT->notification(get_string('s3_connection_error', 'tool_lcbackupcoursestep', $connection->details),
-                    notification::NOTIFY_ERROR);
+                $message = $OUTPUT->notification(
+                    get_string('s3_connection_error', 'tool_lcbackupcoursestep', $connection->details),
+                    notification::NOTIFY_ERROR
+                );
                 $mform->setDefault('s3_status', $message);
             } else {
-                $message = $OUTPUT->notification(get_string('s3_connection_success', 'tool_lcbackupcoursestep'),
-                    notification::NOTIFY_SUCCESS);
+                $message = $OUTPUT->notification(
+                    get_string('s3_connection_success', 'tool_lcbackupcoursestep'),
+                    notification::NOTIFY_SUCCESS
+                );
                 $mform->setDefault('s3_status', $message);
             }
         }
@@ -447,14 +493,18 @@ class step extends libbase {
         global $ADMIN;
 
         // Page to show the list of backed up courses.
-        $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_courses',
+        $ADMIN->add('lifecycle_category', new admin_externalpage(
+            'tool_lcbackupcoursestep_courses',
             get_string('backedupcourses', 'tool_lcbackupcoursestep'),
-            new moodle_url('/admin/tool/lcbackupcoursestep/courses.php')));
+            new moodle_url('/admin/tool/lcbackupcoursestep/courses.php')
+        ));
 
         // Page to show the list of adhoc tasks.
-        $ADMIN->add('lifecycle_category', new admin_externalpage('tool_lcbackupcoursestep_tasks',
+        $ADMIN->add('lifecycle_category', new admin_externalpage(
+            'tool_lcbackupcoursestep_tasks',
             get_string('adhoc_tasks', 'tool_lcbackupcoursestep'),
-            new moodle_url('/admin/tool/lcbackupcoursestep/tasks.php')));
+            new moodle_url('/admin/tool/lcbackupcoursestep/tasks.php')
+        ));
     }
 
     /**

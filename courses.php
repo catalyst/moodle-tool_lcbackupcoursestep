@@ -64,8 +64,10 @@ if ($action) {
             send_stored_file($file, 0, 0, true);
             break;
         case 'restore':
+            // Restore the  course.
             $context = \context_system::instance();
-            $restoreurl = new \moodle_url('/backup/restore.php',
+            $restoreurl = new \moodle_url(
+                '/backup/restore.php',
                 [
                     'contextid' => $context->id,
                     'pathnamehash' => $file->get_pathnamehash(),
@@ -73,6 +75,7 @@ if ($action) {
                 ]
             );
             redirect($restoreurl);
+            // Intentionally no break: redirect() exits the script and control will not continue to default.
         default:
             throw new coding_exception("action '{$action}' is not supported.");
             break;

@@ -99,8 +99,14 @@ class course_backup_s3_task extends \core\task\adhoc_task {
         $settings = settings_manager::get_settings($instanceid, settings_type::STEP);
 
         // Backup course.
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $courseid, \backup::FORMAT_MOODLE,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, get_admin()->id);
+        $bc = new \backup_controller(
+            \backup::TYPE_1COURSE,
+            $courseid,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            get_admin()->id
+        );
 
         // Settings.
         $backupplan = $bc->get_plan();

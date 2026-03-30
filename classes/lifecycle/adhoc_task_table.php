@@ -30,7 +30,6 @@ use html_writer;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class adhoc_task_table extends \table_sql {
-
     /**
      * @var array "cached" lang strings
      */
