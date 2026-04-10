@@ -10,6 +10,7 @@ Branches
 | Moodle version | Branch            |
 |----------------|-------------------|
 | Moodle 4.1+    | MOODLE_401_STABLE |
+| Moodle 4.5+    | MOODLE_405_STABLE |
 
 Dependencies
 ============
