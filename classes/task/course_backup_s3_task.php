@@ -118,10 +118,14 @@ class course_backup_s3_task extends \core\task\adhoc_task {
             }
 
             $key = substr($key, strlen($keyprefix));
-            $setting = $backupplan->get_setting($key);
 
-            if ($setting->get_status() === \base_setting::NOT_LOCKED) {
-                $setting->set_value($value);
+            // Only set the setting if it exists and is not locked.
+            if ($backupplan->setting_exists($key)) {
+                $setting = $backupplan->get_setting($key);
+
+                if ($setting->get_status() === \base_setting::NOT_LOCKED) {
+                    $setting->set_value($value);
+                }
             }
         }
 
