@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/admin/tool/lifecycle/step/lib.php');
 
+use admin_category;
 use admin_externalpage;
 use core\output\notification;
 use moodle_url;
@@ -482,29 +483,6 @@ class step extends libbase {
                 $mform->setDefault('s3_status', $message);
             }
         }
-    }
-
-    /**
-     * Returns the instance settings.
-     *
-     * @return void
-     */
-    public function get_plugin_settings() {
-        global $ADMIN;
-
-        // Page to show the list of backed up courses.
-        $ADMIN->add('lifecycle_category', new admin_externalpage(
-            'tool_lcbackupcoursestep_courses',
-            get_string('backedupcourses', 'tool_lcbackupcoursestep'),
-            new moodle_url('/admin/tool/lcbackupcoursestep/courses.php')
-        ));
-
-        // Page to show the list of adhoc tasks.
-        $ADMIN->add('lifecycle_category', new admin_externalpage(
-            'tool_lcbackupcoursestep_tasks',
-            get_string('adhoc_tasks', 'tool_lcbackupcoursestep'),
-            new moodle_url('/admin/tool/lcbackupcoursestep/tasks.php')
-        ));
     }
 
     /**
