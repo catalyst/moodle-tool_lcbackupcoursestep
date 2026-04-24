@@ -35,8 +35,10 @@ if ($hassiteconfig) {
     // TODO: turn these 2 pages into tabs in lifecylce page.
 
     // Create new category for the plugin.
-    $category = new admin_category('tool_lcbackupcoursestep',
-        get_string('pluginname', 'tool_lcbackupcoursestep'));
+    $category = new admin_category(
+        'tool_lcbackupcoursestep',
+        get_string('pluginname', 'tool_lcbackupcoursestep')
+    );
     $ADMIN->add('tools', $category);
 
     // Page to show the list of backed up courses.

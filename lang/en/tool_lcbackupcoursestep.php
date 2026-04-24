@@ -22,28 +22,28 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['pluginname'] = 'Adhoc course backup step';
-$string['plugindescription'] = 'Backup courses using adhoc tasks.';
-$string['privacy:metadata'] = 'The plugin does not store any personal data.';
+$string['actions_header'] = 'Actions';
 $string['adhoc_tasks'] = 'Adhoc tasks for course backup (tool_lcbackupcoursestep)';
 $string['adhocbackupstasks'] = 'Pending adhoc tasks for course backup';
 $string['adhocbackupstasksdescription'] = 'This page show a list of adhoc tasks that are waiting to be processed. You can also delete any failed task if required.';
 $string['backedupcourses'] = 'List of backed up courses (tool_lcbackupcoursestep)';
 $string['backupsettings'] = 'Backup settings';
 $string['confirmdeletetask'] = 'Are you sure you want to delete this task?';
+$string['course_fullname_header'] = 'Course full name';
 $string['course_id_header'] = 'Course ID';
 $string['course_shortname_header'] = 'Course short name';
-$string['course_fullname_header'] = 'Course full name';
-$string['filename_header'] = 'File name';
-$string['filesize_header'] = 'File size';
 $string['createdat_header'] = 'Created at';
 $string['faildelay_header'] = 'Fail delay';
-$string['actions_header'] = 'Actions';
+$string['filename_header'] = 'File name';
+$string['filesize_header'] = 'File size';
 $string['missing_course'] = 'Missing course';
 $string['missing_workflow'] = 'Missing workflow';
 $string['next_run_header'] = 'Next run time';
-$string['s3_bucket'] = 'Bucket';
+$string['plugindescription'] = 'Backup courses using adhoc tasks.';
+$string['pluginname'] = 'Adhoc course backup step';
+$string['privacy:metadata'] = 'The plugin does not store any personal data.';
 $string['s3_acl'] = 'ACL';
+$string['s3_bucket'] = 'Bucket';
 $string['s3_connection_error'] = 'Connection error: {$a}';
 $string['s3_connection_success'] = 'Connection successful';
 $string['s3_key'] = 'Key';

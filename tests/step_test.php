@@ -42,7 +42,7 @@ use tool_lifecycle\settings_type;
  * @package    tool_lcbackupcoursestep
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class step_test extends \advanced_testcase {
+final class step_test extends \advanced_testcase {
     /** Icon of the manual trigger. */
     const MANUAL_TRIGGER1_ICON = 't/up';
 
@@ -135,7 +135,7 @@ class step_test extends \advanced_testcase {
      * Test course is backed up.
      * @covers \tool_lcbackupcoursestep\lifecycle\step::process_course
      */
-    public function test_backup_course_step() {
+    public function test_backup_course_step(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest();
@@ -252,7 +252,7 @@ class step_test extends \advanced_testcase {
      *
      * @covers \tool_lcbackupcoursestep\lifecycle\step::process_course
      */
-    public function test_backup_course_step_s3() {
+    public function test_backup_course_step_s3(): void {
         global $DB, $CFG;
 
         $this->resetAfterTest();
