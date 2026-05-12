@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->version   = 2026030601;
-$plugin->requires  = 2022041200;
+$plugin->requires  = 2024100700;
 $plugin->component = 'tool_lcbackupcoursestep';
 
 $plugin->dependencies = [
     'tool_lifecycle' => 2023050201,
 ];
 
-$plugin->supported = [401, 405];
+$plugin->supported = [405, 500];

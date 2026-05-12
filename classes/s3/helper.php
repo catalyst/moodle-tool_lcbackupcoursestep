@@ -33,17 +33,13 @@ use tool_lifecycle\settings_type;
  */
 class helper {
     /**
-     * Check if local/aws plugin installed.
+     * Check if the AWS SDK is available.
      *
-     * return bool true if dependency is met.
+     * @return bool true if dependency is met.
      */
     public static function met_dependency(): bool {
         global $CFG;
-        if (!file_exists($CFG->dirroot . '/local/aws/version.php')) {
-            return false;
-        }
-        require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-        return true;
+        return is_dir($CFG->libdir . '/aws-sdk/') && class_exists(\Aws\S3\S3Client::class);
     }
 
     /**
@@ -54,7 +50,7 @@ class helper {
     public static function get_s3_region_options(): array {
         global $CFG;
 
-        $path = $CFG->dirroot . '/local/aws/sdk/Aws/data/endpoints.json.php';
+        $path = $CFG->dirroot . '/lib/aws-sdk/src/data/endpoints.json.php';
         if (!file_exists($path)) {
             return [];
         }
@@ -77,7 +73,7 @@ class helper {
     public static function get_s3_acl_options(): array {
         global $CFG;
 
-        $path = $CFG->dirroot . '/local/aws/sdk/Aws/data/s3/2006-03-01/api-2.json.php';
+        $path = $CFG->dirroot . '/lib/aws-sdk/src/data/s3/2006-03-01/api-2.json.php';
         if (!file_exists($path)) {
             return [];
         }
@@ -89,6 +85,30 @@ class helper {
             $options[$value] = $value;
         }
         return $options;
+    }
+
+    /**
+     * Create a proxy string suitable for use with the AWS SDK.
+     *
+     * @return string the string to use for proxy settings.
+     */
+    private static function get_proxy_string(): string {
+        global $CFG;
+        $proxy = '';
+        if (empty($CFG->proxytype) || $CFG->proxytype == 'SOCKS5') {
+            // S3 doesn't support SOCKS proxy.
+            return $proxy;
+        }
+        if (!empty($CFG->proxyhost)) {
+            $proxy = $CFG->proxyhost;
+            if (!empty($CFG->proxyport)) {
+                $proxy .= ':' . $CFG->proxyport;
+            }
+            if (!empty($CFG->proxyuser) && !empty($CFG->proxypassword)) {
+                $proxy = $CFG->proxyuser . ':' . $CFG->proxypassword . '@' . $proxy;
+            }
+        }
+        return $proxy;
     }
 
     /**
@@ -115,7 +135,10 @@ class helper {
 
         // Proxy.
         if ($settings['s3_useproxy']) {
-            $options['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
+            $proxy = self::get_proxy_string();
+            if ($proxy !== '') {
+                $options['http'] = ['proxy' => $proxy];
+            }
         }
 
         // Test only.
