@@ -8,4 +8,4 @@ jobs:
     uses: catalyst/catalyst-moodle-workflows/.github/workflows/ci.yml@main
     with:
        disable_release: true
-       extra_plugin_runners: 'moodle-plugin-ci add-plugin --branch MOODLE_405_STABLE-catalyst catalyst/moodle-tool_lifecycle'
+       extra_plugin_runners: 'git clone --branch MOODLE_405_STABLE-catalyst https://github.com/catalyst/moodle-tool_lifecycle.git $GITHUB_WORKSPACE/moodle/admin/tool/lifecycle'
