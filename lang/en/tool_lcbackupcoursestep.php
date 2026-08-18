@@ -46,6 +46,7 @@ $string['s3_acl'] = 'ACL';
 $string['s3_bucket'] = 'Bucket';
 $string['s3_connection_error'] = 'Connection error: {$a}';
 $string['s3_connection_success'] = 'Connection successful';
+$string['s3_connection_validation'] = 'S3 credentials can only be saved if there is a valid connection.';
 $string['s3_key'] = 'Key';
 $string['s3_key_prefix'] = 'Key prefix';
 $string['s3_region'] = 'Region';
