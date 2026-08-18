@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026030601;
+$plugin->version   = 2026030602;
 $plugin->requires  = 2024100700;
 $plugin->component = 'tool_lcbackupcoursestep';
 

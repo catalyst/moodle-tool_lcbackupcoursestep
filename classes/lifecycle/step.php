@@ -204,6 +204,7 @@ class step extends libbase {
             new instance_setting('s3_key_prefix', PARAM_TEXT, true),
             new instance_setting('s3_region', PARAM_TEXT, true),
             new instance_setting('s3_acl', PARAM_TEXT, true),
+            new instance_setting('s3_base_url', PARAM_TEXT, true),
             new instance_setting('s3_useproxy', PARAM_BOOL, true),
         ];
     }
@@ -392,6 +393,12 @@ class step extends libbase {
         );
         $mform->setType('s3_region', PARAM_TEXT);
         $mform->hideIf('s3_region', 'uses3', 'eq', 0);
+
+        // Use base URL.
+        $mform->addElement('text', 's3_base_url', get_string('s3_base_url', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_base_url', PARAM_TEXT);
+        $mform->addHelpButton('s3_base_url', 's3_base_url', 'tool_lcbackupcoursestep');
+        $mform->hideIf('s3_base_url', 'uses3', 'eq', 0);
 
         // Use proxy.
         $mform->addElement(
