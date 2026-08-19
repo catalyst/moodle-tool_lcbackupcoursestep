@@ -141,6 +141,11 @@ class helper {
             }
         }
 
+        // Base URL.
+        if (!empty($settings['s3_base_url'])) {
+            $options['endpoint'] = $settings['s3_base_url'];
+        }
+
         // Test only.
         if (PHPUNIT_TEST) {
             $mock = new MockHandler();

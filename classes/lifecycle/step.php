@@ -204,6 +204,7 @@ class step extends libbase {
             new instance_setting('s3_key_prefix', PARAM_TEXT, true),
             new instance_setting('s3_region', PARAM_TEXT, true),
             new instance_setting('s3_acl', PARAM_TEXT, true),
+            new instance_setting('s3_base_url', PARAM_TEXT, true),
             new instance_setting('s3_useproxy', PARAM_BOOL, true),
         ];
     }
@@ -393,6 +394,12 @@ class step extends libbase {
         $mform->setType('s3_region', PARAM_TEXT);
         $mform->hideIf('s3_region', 'uses3', 'eq', 0);
 
+        // Use base URL.
+        $mform->addElement('text', 's3_base_url', get_string('s3_base_url', 'tool_lcbackupcoursestep'));
+        $mform->setType('s3_base_url', PARAM_TEXT);
+        $mform->addHelpButton('s3_base_url', 's3_base_url', 'tool_lcbackupcoursestep');
+        $mform->hideIf('s3_base_url', 'uses3', 'eq', 0);
+
         // Use proxy.
         $mform->addElement(
             'advcheckbox',
@@ -449,8 +456,8 @@ class step extends libbase {
             if (empty($error)) {
                 $connection = helper::check_connection($data);
                 if (!$connection->success) {
-                    // We already show error on s3_status field, so no need to show it here.
-                    $error['s3_status'] = '';
+                    // We already show error on s3_status field, so we only need to show a validation error here.
+                    $error['s3_status'] = get_string('s3_connection_validation', 'tool_lcbackupcoursestep');
                 }
             }
         }
@@ -466,7 +473,7 @@ class step extends libbase {
      */
     public function extend_add_instance_form_definition_after_data($mform, $settings) {
         global $OUTPUT;
-        if (!empty($settings['uses3'])) {
+        if (!empty($settings['uses3']) || !empty($mform->getSubmitValue('uses3'))) {
             $data = $mform->exportValues();
             $connection = helper::check_connection($data);
             if (!$connection->success) {
